@@ -1,10 +1,7 @@
-using Api.Messages;
 using Api.Persistence;
-using Domain.Messages;
-using Infrastructure;
 using Infrastructure.Redis;
 using Microsoft.EntityFrameworkCore;
-using Streaming;
+using Streaming.DependencyInjection;
 
 namespace Api;
 
@@ -33,14 +30,10 @@ public static class ServicesRegister
                 .AllowAnyMethod();
         }));
 
-        // redis store
-        services.AddRedisStore(options => configuration.GetSection(RedisOptions.Redis).Bind(options));
-
-        // messages
-        services.AddSingleton<IMessageProducer, NullMessageProducer>();
-
         // streaming
-        services.AddStreamingCore();
+        services.AddStreamingCore()
+            .UseNullMessageQueue()
+            .UseRedisStore(options => configuration.GetSection(RedisOptions.Redis).Bind(options));
 
         // sqlite
         services.AddDbContext<FbDbContext>(options => { options.UseSqlite("Data Source=featbit.db"); });
