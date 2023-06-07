@@ -1,6 +1,3 @@
-using System.Text.Json;
-using Domain.Shared;
-
 namespace Api.Persistence;
 
 public class Record
