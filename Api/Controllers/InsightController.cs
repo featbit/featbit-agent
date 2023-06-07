@@ -3,7 +3,7 @@ using Api.Persistence;
 using Domain.Insights;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Api.Insights;
+namespace Api.Controllers;
 
 public class InsightController : ApiControllerBase
 {
