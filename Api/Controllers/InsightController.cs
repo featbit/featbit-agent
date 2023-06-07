@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Api.Shared;
 using Api.Persistence;
 using Domain.Insights;
@@ -15,30 +16,15 @@ public class InsightController : ApiControllerBase
     }
 
     [HttpPost("track")]
-    public async Task<IActionResult> TrackAsync([FromBody] Insight[] insights)
+    public async Task<IActionResult> TrackAsync([FromBody] JsonElement element)
     {
         if (EnvId == Guid.Empty)
         {
             return Unauthorized();
         }
 
-        var records = new List<Record>();
-        foreach (var insight in insights)
-        {
-            if (!insight.IsValid())
-            {
-                continue;
-            }
-
-            var userRecord = new Record(RecordType.EndUser, insight.EndUserMessage(EnvId));
-            var insightRecords =
-                insight.InsightMessages(EnvId).Select(message => new Record(RecordType.Insights, message));
-
-            records.Add(userRecord);
-            records.AddRange(insightRecords);
-        }
-
-        await _repository.AddManyAsync(records);
+        var record = new Record(element.GetRawText());
+        await _repository.AddAsync(record);
 
         return Ok();
     }

@@ -16,7 +16,6 @@ public class FbDbContext : DbContext
             CREATE TABLE IF NOT EXISTS Records
             (
                 Id        INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                Type      TEXT    NOT NULL,
                 Content   TEXT    NOT NULL,
                 CreatedAt TEXT    NOT NULL
             );

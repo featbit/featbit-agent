@@ -14,4 +14,10 @@ public class SqliteRepository : IRepository
         _context.AddRange(entities);
         await _context.SaveChangesAsync();
     }
+
+    public async Task AddAsync<TEntity>(TEntity entity) where TEntity : class
+    {
+        _context.Add(entity);
+        await _context.SaveChangesAsync();
+    }
 }

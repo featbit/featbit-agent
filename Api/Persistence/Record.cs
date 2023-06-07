@@ -7,8 +7,6 @@ public class Record
 {
     public long Id { get; set; }
 
-    public string Type { get; set; }
-
     public string Content { get; set; }
 
     public DateTime CreatedAt { get; set; }
@@ -19,10 +17,9 @@ public class Record
     {
     }
 
-    public Record(string type, object value)
+    public Record(string content)
     {
-        Type = type;
-        Content = JsonSerializer.Serialize(value, ReusableJsonSerializerOptions.Web);
+        Content = content;
         CreatedAt = DateTime.UtcNow;
     }
 }
