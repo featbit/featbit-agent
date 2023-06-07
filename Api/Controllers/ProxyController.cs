@@ -1,5 +1,4 @@
 using Api.Persistence;
-using Api.Shared;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;

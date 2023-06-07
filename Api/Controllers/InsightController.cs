@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Api.Shared;
 using Api.Persistence;
 using Microsoft.AspNetCore.Mvc;
 

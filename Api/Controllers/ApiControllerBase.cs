@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Streaming.Shared;
 
-namespace Api.Shared;
+namespace Api.Controllers;
 
 [Route("api/public/[controller]")]
 public class ApiControllerBase : ControllerBase

@@ -1,4 +1,4 @@
-using Api;
+using Api.Setup;
 using Api.Persistence;
 
 // register services
