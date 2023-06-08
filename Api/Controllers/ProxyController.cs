@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Api.Persistence;
 using Api.Store;
+using Api.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
@@ -15,18 +16,27 @@ public class ProxyController : ApiControllerBase
     }
 
     [HttpGet("status")]
-    public IActionResult GetStatusAsync()
+    public async Task<IActionResult> GetStatusAsync()
     {
-        var status = new
+        var status = new Status();
+        
+        try
         {
-            lastSyncTime = DateTime.UtcNow
-        };
+            var lastSyncItem = await _repository.FindLastAsync<SyncHistory>();
+            status.LastSyncAt = lastSyncItem.CreatedAt;
+            status.Type = StatusType.Healthy;
+        }
+        catch (Exception e)
+        {
+            // TODO log error
+            status.Type = StatusType.UnHealthy;
+        }
 
         return new JsonResult(status);
     }
 
     [HttpPost("bootstrap")]
-    public IActionResult Bootstrap(JsonElement jsonElement)
+    public async Task<IActionResult> Bootstrap(JsonElement jsonElement)
     {
         var items = new List<StoreItem>();
 

@@ -20,4 +20,9 @@ public class SqliteRepository : IRepository
         _context.AddRange(entities);
         await _context.SaveChangesAsync();
     }
+
+    public Task<TEntity> FindLastAsync<TEntity>() where TEntity : class
+    {
+        throw new NotImplementedException();
+    }
 }
