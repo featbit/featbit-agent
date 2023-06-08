@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+
 namespace Api.Persistence;
 
 public class SqliteRepository : IRepository
@@ -8,6 +10,9 @@ public class SqliteRepository : IRepository
     {
         _context = context;
     }
+
+    public IQueryable<TEntity> QueryableOf<TEntity>() where TEntity : class
+        => _context.Set<TEntity>().AsQueryable();
 
     public async Task AddAsync<TEntity>(TEntity entity) where TEntity : class
     {
@@ -21,8 +26,9 @@ public class SqliteRepository : IRepository
         await _context.SaveChangesAsync();
     }
 
-    public Task<TEntity> FindLastAsync<TEntity>() where TEntity : class
+    public async Task TruncateAsync<TEntity>() where TEntity : class
     {
-        throw new NotImplementedException();
+        var tableName = _context.Set<TEntity>().EntityType.GetTableName()!;
+        await _context.Database.ExecuteSqlRawAsync("DELETE FROM {0}", tableName);
     }
 }

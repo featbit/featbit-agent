@@ -1,4 +1,4 @@
-namespace Api.Persistence;
+namespace Api.Models;
 
 public class Record
 {
@@ -8,10 +8,10 @@ public class Record
 
     public DateTime CreatedAt { get; set; }
 
-#pragma warning disable CS8618
-    protected Record()
-#pragma warning restore CS8618
+    public Record()
     {
+        Content = string.Empty;
+        CreatedAt = DateTime.UtcNow;
     }
 
     public Record(string content)

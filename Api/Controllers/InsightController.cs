@@ -1,3 +1,4 @@
+using Api.Models;
 using System.Text.Json;
 using Api.Persistence;
 using Microsoft.AspNetCore.Mvc;

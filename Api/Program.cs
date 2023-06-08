@@ -6,7 +6,7 @@ var webApplication = WebApplication.CreateBuilder(args)
     .RegisterServices(args)
     .Build();
 
-// ensure sqlite table created
+// ensure DbContext table created
 {
     using var scope = webApplication.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<FbDbContext>();
