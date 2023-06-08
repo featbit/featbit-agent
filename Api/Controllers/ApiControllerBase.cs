@@ -3,6 +3,7 @@ using Streaming.Shared;
 
 namespace Api.Controllers;
 
+[ApiController]
 [Route("api/public/[controller]")]
 public class ApiControllerBase : ControllerBase
 {

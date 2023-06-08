@@ -1,5 +1,5 @@
+using Api.Store;
 using Api.Persistence;
-using Infrastructure.Redis;
 using Microsoft.EntityFrameworkCore;
 using Streaming.DependencyInjection;
 
@@ -33,7 +33,7 @@ public static class ServicesRegister
         // streaming
         services.AddStreamingCore()
             .UseNullMessageQueue()
-            .UseRedisStore(options => configuration.GetSection(RedisOptions.Redis).Bind(options));
+            .UseStore<InMemoryStore>();
 
         // sqlite
         services.AddDbContext<FbDbContext>(options => { options.UseSqlite("Data Source=featbit.db"); });
