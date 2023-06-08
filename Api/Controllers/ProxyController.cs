@@ -58,6 +58,9 @@ public class ProxyController : ApiControllerBase
 
         // populate store
         InMemoryStore.Populate(items);
+        
+        // set lastSyncAt
+        _repository.AddAsync(new SyncHistory { CreatedAt = DateTime.UtcNow });
 
         return Ok(items);
     }

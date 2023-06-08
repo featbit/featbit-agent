@@ -5,7 +5,8 @@ namespace Api.Persistence;
 public class FbDbContext : DbContext
 {
     public DbSet<Record> Records => Set<Record>();
-
+    public DbSet<SyncHistory> SyncHistories => Set<SyncHistory>();
+    
     public FbDbContext(DbContextOptions<FbDbContext> builderOptions) : base(builderOptions)
     {
     }
@@ -17,6 +18,11 @@ public class FbDbContext : DbContext
             (
                 Id        INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
                 Content   TEXT    NOT NULL,
+                CreatedAt TEXT    NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS SyncHistories
+            (
+                Id        INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
                 CreatedAt TEXT    NOT NULL
             );
         ";
