@@ -98,13 +98,7 @@ public class ProxyController : ApiControllerBase
         var envIds = storeItems.Select(x => x.EnvId).Distinct();
         await _dataChangeNotifier.NotifyAsync(envIds, 0);
 
-        var vms = storeItems.Select(x => new
-        {
-            x.Id,
-            x.Type,
-            x.Timestamp
-        });
-        return Ok(vms);
+        return Ok();
     }
 
     [HttpGet("backup")]
