@@ -8,7 +8,7 @@ public class FbDbContext : DbContext
 {
     public DbSet<Record> Records => Set<Record>();
     public DbSet<SyncHistory> SyncHistories => Set<SyncHistory>();
-    public DbSet<StoreItemBackup> StoreItemBackups => Set<StoreItemBackup>();
+    public DbSet<StoreItem> StoreItems => Set<StoreItem>();
 
     public FbDbContext(DbContextOptions<FbDbContext> builderOptions) : base(builderOptions)
     {
@@ -28,12 +28,13 @@ public class FbDbContext : DbContext
                 Id        INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
                 CreatedAt TEXT    NOT NULL
             );
-            CREATE TABLE IF NOT EXISTS StoreItemBackups
+            CREATE TABLE IF NOT EXISTS StoreItems
             (
-                Id        INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                Id        TEXT    NOT NULL PRIMARY KEY,
+                EnvId     TEXT    NOT NULL,
                 Type      TEXT    NOT NULL,
-                Content   TEXT    NOT NULL,
-                CreatedAt TEXT    NOT NULL
+                Timestamp INTEGER NOT NULL,
+                JsonBytes BLOB    NOT NULL
             );
         ";
 

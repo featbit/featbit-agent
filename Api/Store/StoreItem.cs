@@ -12,6 +12,15 @@ public class StoreItem
 
     public byte[] JsonBytes { get; set; }
 
+    public StoreItem()
+    {
+        Id = Guid.NewGuid().ToString();
+        EnvId = Guid.Empty;
+        Type = string.Empty;
+        Timestamp = 0;
+        JsonBytes = Array.Empty<byte>();
+    }
+
     public StoreItem(string id, Guid envId, string type, long timestamp, byte[] jsonBytes)
     {
         Id = id;
