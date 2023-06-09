@@ -34,7 +34,7 @@ public class ProxyController : ApiControllerBase
         try
         {
             var lastSync = await _repository.QueryableOf<SyncHistory>()
-                .OrderByDescending(x => x.CreatedAt)
+                .OrderByDescending(x => x.Id)
                 .FirstOrDefaultAsync();
 
             return Ok(Status.Healthy(lastSync?.CreatedAt));
