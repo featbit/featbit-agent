@@ -2,6 +2,7 @@ using Api.Store;
 using Api.Models;
 using Api.Persistence;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Api.Messaging;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -104,5 +105,26 @@ public class ProxyController : ApiControllerBase
             x.Timestamp
         });
         return Ok(vms);
+    }
+
+    [HttpGet("backup")]
+    public IActionResult Backup()
+    {
+        if (ApiKey != _configuration["ApiKey"])
+        {
+            return Unauthorized();
+        }
+
+        var snapshot = InMemoryStore.Snapshot;
+        var backups = snapshot
+            .GroupBy(storeItem => storeItem.EnvId)
+            .Select(group => new
+            {
+                envId = group.Key,
+                flags = group.Where(x => x.Type == StoreItemType.Flag).Select(x => JsonNode.Parse(x.JsonBytes)),
+                segments = group.Where(x => x.Type == StoreItemType.Segment).Select(x => JsonNode.Parse(x.JsonBytes))
+            });
+
+        return Ok(backups);
     }
 }

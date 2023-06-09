@@ -9,6 +9,19 @@ public sealed class InMemoryStore : IStore
     private static volatile List<StoreItem> _flags = new();
     private static volatile List<StoreItem> _segments = new();
 
+    public static IEnumerable<StoreItem> Snapshot
+    {
+        get
+        {
+            var snapshot = new List<StoreItem>();
+
+            snapshot.AddRange(_flags);
+            snapshot.AddRange(_segments);
+
+            return snapshot;
+        }
+    }
+
     public static void Populate(List<StoreItem> items)
     {
         lock (WriteLock)
