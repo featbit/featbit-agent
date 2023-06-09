@@ -76,12 +76,9 @@ public class ProxyController : ApiControllerBase
                 var bytes = JsonSerializer.SerializeToUtf8Bytes(element);
 
                 storeItems.Add(new StoreItem(id, envId, itemType, timestamp, bytes));
-                storeItemBackups.Add(new StoreItemBackup(itemType, element.GetRawText()));
+                storeItemBackups.Add(new StoreItemBackup(itemType, JsonSerializer.Serialize(element)));
             }
         }
-
-        // populate InMemoryStore
-        InMemoryStore.Populate(storeItems);
 
         // update store item backups
         await _repository.TruncateAsync<StoreItemBackup>();
@@ -90,6 +87,9 @@ public class ProxyController : ApiControllerBase
         // add sync history
         var syncHistory = new SyncHistory { CreatedAt = DateTime.UtcNow };
         await _repository.AddAsync(syncHistory);
+
+        // populate InMemoryStore
+        InMemoryStore.Populate(storeItems);
 
         var vms = storeItems.Select(x => new
         {

@@ -29,6 +29,12 @@ public class SqliteRepository : IRepository
     public async Task TruncateAsync<TEntity>() where TEntity : class
     {
         var tableName = _context.Set<TEntity>().EntityType.GetTableName()!;
-        await _context.Database.ExecuteSqlRawAsync("DELETE FROM {0}", tableName);
+        var truncateSql = @$"
+            DELETE FROM {tableName};
+            UPDATE sqlite_sequence SET seq = 0 WHERE name = '{tableName}';
+        ";
+
+        // We use ExecuteSqlRawAsync here because the tableName should not be parameterized
+        await _context.Database.ExecuteSqlRawAsync(truncateSql);
     }
 }
