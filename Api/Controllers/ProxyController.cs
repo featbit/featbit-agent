@@ -2,6 +2,7 @@ using Api.Store;
 using Api.Models;
 using Api.Persistence;
 using System.Text.Json;
+using Api.Messaging;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,15 +12,18 @@ public class ProxyController : ApiControllerBase
 {
     private readonly IRepository _repository;
     private readonly IConfiguration _configuration;
+    private readonly IDataChangeNotifier _dataChangeNotifier;
     private readonly ILogger<ProxyController> _logger;
 
     public ProxyController(
         IRepository repository,
         IConfiguration configuration,
+        IDataChangeNotifier dataChangeNotifier,
         ILogger<ProxyController> logger)
     {
         _repository = repository;
         _configuration = configuration;
+        _dataChangeNotifier = dataChangeNotifier;
         _logger = logger;
     }
 
@@ -88,6 +92,10 @@ public class ProxyController : ApiControllerBase
 
         // populate InMemoryStore
         InMemoryStore.Populate(storeItems);
+
+        // push data-change to connected sdks
+        var envIds = storeItems.Select(x => x.EnvId).Distinct();
+        await _dataChangeNotifier.NotifyAsync(envIds, 0);
 
         var vms = storeItems.Select(x => new
         {

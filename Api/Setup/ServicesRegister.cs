@@ -1,3 +1,4 @@
+using Api.Messaging;
 using Api.Store;
 using Api.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -41,6 +42,9 @@ public static class ServicesRegister
         // repository
         services.AddDbContext<FbDbContext>(options => { options.UseSqlite("Data Source=featbit.db"); });
         services.AddScoped<IRepository, SqliteRepository>();
+        
+        // data change notifier
+        services.AddTransient<IDataChangeNotifier, DataChangeNotifier>();
 
         return builder;
     }
