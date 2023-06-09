@@ -35,7 +35,7 @@ public static class ServicesRegister
             .UseNullMessageQueue()
             .UseStore<InMemoryStore>();
 
-        // sqlite
+        // repository
         services.AddDbContext<FbDbContext>(options => { options.UseSqlite("Data Source=featbit.db"); });
         services.AddScoped<IRepository, SqliteRepository>();
 

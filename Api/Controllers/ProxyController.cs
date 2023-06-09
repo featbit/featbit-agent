@@ -10,35 +10,50 @@ namespace Api.Controllers;
 public class ProxyController : ApiControllerBase
 {
     private readonly IRepository _repository;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<ProxyController> _logger;
 
-    public ProxyController(IRepository repository, ILogger<ProxyController> logger)
+    public ProxyController(
+        IRepository repository,
+        IConfiguration configuration,
+        ILogger<ProxyController> logger)
     {
         _repository = repository;
+        _configuration = configuration;
         _logger = logger;
     }
 
     [HttpGet("status")]
-    public async Task<Status> GetStatusAsync()
+    public async Task<IActionResult> GetStatusAsync()
     {
+        if (ApiKey != _configuration["ApiKey"])
+        {
+            return Unauthorized();
+        }
+
         try
         {
             var lastSync = await _repository.QueryableOf<SyncHistory>()
                 .OrderByDescending(x => x.CreatedAt)
                 .FirstOrDefaultAsync();
 
-            return Status.Healthy(lastSync?.CreatedAt);
+            return Ok(Status.Healthy(lastSync?.CreatedAt));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "An exception occurred while checking the agent status.");
-            return Status.UnHealthy(null);
+            return Ok(Status.UnHealthy(null));
         }
     }
 
     [HttpPost("bootstrap")]
     public async Task<IActionResult> Bootstrap(JsonElement jsonElement)
     {
+        if (ApiKey != _configuration["ApiKey"])
+        {
+            return Unauthorized();
+        }
+
         var storeItems = new List<StoreItem>();
         var storeItemBackups = new List<StoreItemBackup>();
 
