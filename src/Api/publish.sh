@@ -1,17 +1,16 @@
 #!/bin/bash
-Version="1.0.0"
-PublishBaseDir="publish"
-Platforms=("win-x64" "linux-x64" "osx-x64")
+publishBaseDir="publish"
+platforms=("win-x64" "linux-x64" "osx-x64")
 
-if ! [ -d "${PublishBaseDir}" ]; then
-  mkdir "$PublishBaseDir"
+if ! [ -d "${publishBaseDir}" ]; then
+  mkdir "$publishBaseDir"
 fi
 
-rm -rf "$PublishBaseDir"/*
+rm -rf "$publishBaseDir"/*
 
-for platform in "${Platforms[@]}"; do
-  dotnet publish -r "$platform" -c Release -p:DebugType=none --self-contained true -o "$PublishBaseDir/$platform" || exit 1
-  cd "$PublishBaseDir/$platform" || exit 1
-  tar -czvf "./featbit_agent_${platform}_${Version}.tar.gz" ./* -C ../ || exit 1
+for platform in "${platforms[@]}"; do
+  dotnet publish -r "$platform" -c Release -p:DebugType=none --self-contained true -o "$publishBaseDir/$platform" || exit 1
+  cd "$publishBaseDir/$platform" || exit 1
+  tar -czvf "./featbit_agent_${platform}_${version}.tar.gz" ./* -C ../ || exit 1
   cd ../../
 done

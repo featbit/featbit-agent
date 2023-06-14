@@ -1,23 +1,22 @@
-$Version = '1.0.0'
-$PublishBaseDir = 'publish'
-$Platforms = @('win-x64', 'linux-x64', 'osx-x64')
+$publishBaseDir = 'publish'
+$platforms = @('win-x64', 'linux-x64', 'osx-x64')
 
-if (-not(Test-Path -Path $PublishBaseDir -PathType Container))
+if (-not(Test-Path -Path $publishBaseDir -PathType Container))
 {
-    New-Item -ItemType Directory -Path $PublishBaseDir | Out-Null
+    New-Item -ItemType Directory -Path $publishBaseDir | Out-Null
 }
 
-Remove-Item -Path "$PublishBaseDir/*" -Recurse -Force
+Remove-Item -Path "$publishBaseDir/*" -Recurse -Force
 
-foreach ($platform in $Platforms)
+foreach ($platform in $platforms)
 {
-    dotnet publish -r $platform -c Release -p:DebugType=none --self-contained true -o "$PublishBaseDir/$platform"
+    dotnet publish -r $platform -c Release -p:DebugType=none --self-contained true -o "$publishBaseDir/$platform"
     if ($LASTEXITCODE -ne 0)
     {
         exit 1
     }
 
-    Set-Location "$PublishBaseDir/$platform"
-    Compress-Archive -Path * -DestinationPath "../featbit_agent_${platform}_${Version}.zip"
+    Set-Location "$publishBaseDir/$platform"
+    Compress-Archive -Path * -DestinationPath "../featbit_agent_${platform}_${version}.zip"
     Set-Location ../../
 }

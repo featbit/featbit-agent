@@ -1,0 +1,53 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version"
+        required: true
+
+env:
+  version: ${{ github.event.inputs.version }}
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    environment: Production
+    steps:
+      - name: Echo Version Variable
+        run: echo "${{ env.version }}"
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Restore Packages
+        run: dotnet restore
+
+      - name: Publish
+        working-directory: ./src/Api
+        shell: bash
+        env:
+          version: ${{ env.version }}
+        run: |
+          ls -a
+          chmod +x ./publish.sh
+          ./publish.sh
+
+      - name: Create Release
+        uses: softprops/action-gh-release@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ env.version }}
+          name: FeatBit Agent v${{ env.version }}
+          body: See the assets to download this version and install.
+          prerelease: false
+          generate_release_notes: false
+          files: ./src/Api/publish/*.tar.gz
+          fail_on_unmatched_files: true
