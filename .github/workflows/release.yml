@@ -13,7 +13,6 @@ env:
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
-    environment: Production
     steps:
       - name: Echo Version Variable
         run: echo "${{ env.version }}"
