@@ -18,6 +18,6 @@ foreach ($platform in $Platforms)
     }
 
     Set-Location "$PublishBaseDir/$platform"
-    Compress-Archive -Path * -DestinationPath "../featbit_agent_${platform}_${Version}.tar.gz"
+    Compress-Archive -Path * -DestinationPath "../featbit_agent_${platform}_${Version}.zip"
     Set-Location ../../
 }
