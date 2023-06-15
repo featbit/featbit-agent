@@ -21,8 +21,7 @@ You may consider setting up the FeatBit Agent in the following scenarios:
   in your own data center, instead of connecting directly to FeatBit's streaming API.
 - **Security and Privacy**: In environments with strict security protocols, your application might be restricted from
   establishing third-party connections. By deploying the FeatBit Agent within your customers' own environments, you can
-  overcome this limitation. Since the agent operates locally, all user information will remain within your customers'
-  environments.
+  overcome this limitation. Since the agent operates locally, all user information will remain within your customers' environments.
 
 ## Installation
 
