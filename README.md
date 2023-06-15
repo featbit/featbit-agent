@@ -88,7 +88,6 @@ User=your-user-name
 
 # !! replace with your agent key, for example: rp-MzM3OTE5MTk0**************
 Environment=ApiKey=your-api-key
-Environment=ASPNETCORE_ENVIRONMENT=Production
 
 # Restart service after 10 seconds if the featbit agent crashes:
 Restart=always
@@ -143,7 +142,7 @@ sudo systemctl enable featbit-agent.service
 
 ### View logs
 
-Since the FeatBit Agent using Kestrel is managed using systemd, all events and processes are logged to a centralized
+Since the FeatBit Agent is managed by systemd, all events and processes are logged to a centralized
 journal. To view the `featbit-agent.service`-specific logs, use the following command:
 
 ```bash
