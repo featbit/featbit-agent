@@ -89,7 +89,10 @@ User=your-user-name
 # !! replace with your agent key, for example: rp-MzM3OTE5MTk0**************
 Environment=ApiKey=your-api-key
 
-# Restart service after 10 seconds if the featbit agent crashes:
+# set the url for featbit agent
+Environment=ASPNETCORE_URLS=http://*:6100
+
+# restart service after 10 seconds if the featbit agent crashes:
 Restart=always
 RestartSec=10
 
@@ -160,5 +163,5 @@ sudo journalctl -fu featbit-agent.service --since "2023-06-15" --until "2023-06-
 You can run the following command to check if the agent is healthy:
 
 ```bash
-curl http://localhost:5000/health/liveness; echo
+curl http://localhost:6100/health/liveness; echo
 ```
