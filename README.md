@@ -23,3 +23,114 @@ You may consider setting up the FeatBit Agent in the following scenarios:
   establishing third-party connections. By deploying the FeatBit Agent within your customers' own environments, you can
   overcome this limitation. Since the agent operates locally, all user information will remain within your customers'
   environments.
+
+## Installation
+
+### Download
+
+The first thing we need to do is download featbit agent
+from [GitHub releases](https://github.com/featbit/featbit-agent/releases) to your hosting server
+
+```bash
+# Chose your own version, here we chose linux-x64 for example. You can find the download link in releases page.
+wget https://github.com/featbit/featbit-agent/releases/download/v1.0.0/featbit_agent_linux-x64_1.0.0.tar.gz
+tar -xvzf featbit_agent_linux-x64_1.0.0.tar.gz --one-top-level=featbit-agent
+cd featbit-agent
+```
+
+After download complete, we do a quick test here.
+
+```bash
+# Do a quick test
+# If the Api file is not executable, Use 'chmod +x Api' to allow execution of the executable file
+./Api
+```
+
+You should see below output if everything is fine.
+
+```log
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5000
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Production
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: /home/ubuntu/featbit-agent/
+```
+
+### Run As A Service
+
+We need to set up a process manager that starts the FeatBit Agent when requests arrive and restarts the app after it
+crashes or the server reboots. We use [systemd](https://systemd.io/) here for example.
+
+#### Create the service file
+
+Create the service definition file:
+
+```bash
+sudo vi /etc/systemd/system/featbit-agent.service
+```
+
+Then copy-paste below content into it
+
+```ini
+[Unit]
+Description = The FeatBit Agent Service
+
+[Service]
+# !! replace with your own featbit agent extraction location path here, for example: /home/ubuntu/
+ExecStart=/your/location/to/featbit-agent/Api
+WorkingDirectory=/your/location/to/featbit-agent
+
+# !! replace with your user name, for example: ubuntu
+User=your-user-name
+
+# !! replace with your agent key, for example: 
+Environment=ApiKey=your-api-key
+
+Environment=ASPNETCORE_ENVIRONMENT=Production
+
+# Restart service after 10 seconds if the featbit agent crashes:
+Restart=always
+RestartSec=10
+
+KillSignal=SIGINT
+
+# to query logs using journalctl, set a logical name here
+SyslogIdentifier=featbit-agent
+
+[Install]
+WantedBy=multi-user.target
+```
+
+After **replace those key configuration**, save the file. 
+
+Now, Let's start the service and check its status:
+
+```bash
+# start featbit agent service then check status
+sudo systemctl start featbit-agent.service
+sudo systemctl status featbit-agent.service
+```
+
+The last time we need to do is enable automatic startup through the following command:
+```bash
+sudo systemctl enable featbit-agent.service
+```
+
+### View logs
+
+Since the FeatBit Agent using Kestrel is managed using systemd, all events and processes are logged to a centralized
+journal. To view the `featbit-agent.service`-specific logs, use the following command:
+
+```bash
+sudo journalctl -fu featbit-agent.service
+```
+
+For further filtering, time options such as `--since today`, `--until 1 hour ago`, or a combination of these can reduce the
+number of entries returned.
+
+```bash
+sudo journalctl -fu featbit-agent.service --since "2023-06-15" --until "2023-06-15 12:00" 
+```
