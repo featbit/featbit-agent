@@ -21,31 +21,32 @@ You may consider setting up the FeatBit Agent in the following scenarios:
   in your own data center, instead of connecting directly to FeatBit's streaming API.
 - **Security and Privacy**: In environments with strict security protocols, your application might be restricted from
   establishing third-party connections. By deploying the FeatBit Agent within your customers' own environments, you can
-  overcome this limitation. Since the agent operates locally, all user information will remain within your customers' environments.
+  overcome this limitation. Since the agent operates locally, all user information will remain within your customers'
+  environments.
 
 ## Installation
 
 ### Download
 
-The first thing we need to do is download featbit agent
-from [GitHub releases](https://github.com/featbit/featbit-agent/releases) to your hosting server
+To begin, you'll need to download the FeatBit Agent from
+the [GitHub releases](https://github.com/featbit/featbit-agent/releases) page to your hosting server.
 
 ```bash
-# Chose your own version, here we chose linux-x64 for example. You can find the download link in releases page.
+# !! Replace the URL with the desired version, here we choose linux-x64 for example 
 wget https://github.com/featbit/featbit-agent/releases/download/v1.0.0/featbit_agent_linux-x64_1.0.0.tar.gz
 tar -xvzf featbit_agent_linux-x64_1.0.0.tar.gz --one-top-level=featbit-agent
 cd featbit-agent
 ```
 
-After download complete, we do a quick test here.
+Once the download is complete, perform a quick test to verify that Featbit Agent can run on your machine.
 
 ```bash
-# Do a quick test
+# Run agent from command line
 # If the Api file is not executable, Use 'chmod +x Api' to allow execution of the executable file
 ./Api
 ```
 
-You should see below output if everything is fine.
+If everything is fine, you should see the following output:
 
 ```log
 info: Microsoft.Hosting.Lifetime[14]
@@ -60,8 +61,8 @@ info: Microsoft.Hosting.Lifetime[0]
 
 ### Run As A Service
 
-We need to set up a process manager that starts the FeatBit Agent when requests arrive and restarts the app after it
-crashes or the server reboots. We use [systemd](https://systemd.io/) here for example.
+We need to set up a process manager that starts the agent when requests arrive and restarts the agent after it
+crashes or the server reboots. Here we use [systemd](https://systemd.io/) for example.
 
 #### Create the service file
 
@@ -71,7 +72,7 @@ Create the service definition file:
 sudo vi /etc/systemd/system/featbit-agent.service
 ```
 
-Then copy-paste below content into it
+Then copy-paste below content into it, **replacing the necessary configurations** and save the file.
 
 ```ini
 [Unit]
@@ -103,17 +104,40 @@ SyslogIdentifier=featbit-agent
 WantedBy=multi-user.target
 ```
 
-After **replace those key configuration**, save the file. 
-
-Now, Let's start the service and check its status:
+Now, let's start the service and check its status:
 
 ```bash
-# start featbit agent service then check status
+# Start the FeatBit Agent service and check its status
 sudo systemctl start featbit-agent.service
 sudo systemctl status featbit-agent.service
 ```
 
-The last time we need to do is enable automatic startup through the following command:
+If everything is fine, you should see the following output:
+
+```log
+● featbit-agent.service - The FeatBit Agent Service
+     Loaded: loaded (/etc/systemd/system/featbit-agent.service; disabled; vendor preset: enabled)
+     Active: active (running) since Thu 2023-06-15 03:35:26 UTC; 1h 40min ago
+   Main PID: 2321 (Api)
+      Tasks: 14 (limit: 1141)
+     Memory: 31.9M
+        CPU: 2.814s
+     CGroup: /system.slice/featbit-agent.service
+             └─2321 /home/ubuntu/featbit-agent/Api
+
+Jun 15 03:35:26 ip-172-31-37-23 systemd[1]: Started The FeatBit Agent Service.
+Jun 15 03:35:28 ip-172-31-37-23 featbit-agent[2321]: info: Microsoft.Hosting.Lifetime[14]
+Jun 15 03:35:28 ip-172-31-37-23 featbit-agent[2321]:       Now listening on: http://localhost:5000
+Jun 15 03:35:28 ip-172-31-37-23 featbit-agent[2321]: info: Microsoft.Hosting.Lifetime[0]
+Jun 15 03:35:28 ip-172-31-37-23 featbit-agent[2321]:       Application started. Press Ctrl+C to shut down.
+Jun 15 03:35:28 ip-172-31-37-23 featbit-agent[2321]: info: Microsoft.Hosting.Lifetime[0]
+Jun 15 03:35:28 ip-172-31-37-23 featbit-agent[2321]:       Hosting environment: Production
+Jun 15 03:35:28 ip-172-31-37-23 featbit-agent[2321]: info: Microsoft.Hosting.Lifetime[0]
+Jun 15 03:35:28 ip-172-31-37-23 featbit-agent[2321]:       Content root path: /home/ubuntu/featbit-agent/
+```
+
+To enable automatic startup of the agent when the OS starts, run the following command:
+
 ```bash
 sudo systemctl enable featbit-agent.service
 ```
