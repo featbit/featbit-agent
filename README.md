@@ -155,3 +155,10 @@ number of entries returned.
 ```bash
 sudo journalctl -fu featbit-agent.service --since "2023-06-15" --until "2023-06-15 12:00" 
 ```
+
+### Health Check
+You can run the following command to check if the agent is healthy:
+
+```bash
+curl http://localhost:5000/health/liveness; echo
+```
