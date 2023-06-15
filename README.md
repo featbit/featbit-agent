@@ -59,7 +59,7 @@ info: Microsoft.Hosting.Lifetime[0]
       Content root path: /home/ubuntu/featbit-agent/
 ```
 
-### Run As A Service
+### Run As A Service (Using Systemd on Linux)
 
 We need to set up a process manager that starts the agent when requests arrive and restarts the agent after it
 crashes or the server reboots. Here we use [systemd](https://systemd.io/) for example.
