@@ -28,29 +28,30 @@ You may consider setting up the FeatBit Agent in the following scenarios:
 
 ### Download
 
-To begin, you'll need to download the FeatBit Agent from
-the [GitHub releases](https://github.com/featbit/featbit-agent/releases) page to your hosting server.
+To begin, download the FeatBit Agent from the [GitHub releases](https://github.com/featbit/featbit-agent/releases) page
+to your hosting server.
 
 ```bash
-# !! Replace the URL with the desired version, here we choose linux-x64 for example 
+# Choose your desired version, here we use linux-x64 for example
 wget https://github.com/featbit/featbit-agent/releases/download/v1.0.0/featbit_agent_linux-x64_1.0.0.tar.gz
-tar -xvzf featbit_agent_linux-x64_1.0.0.tar.gz --one-top-level=featbit-agent
-cd featbit-agent
 ```
 
 Once the download is complete, perform a quick test to verify that Featbit Agent can run on your machine.
 
 ```bash
+tar -xvzf featbit_agent_linux-x64_1.0.0.tar.gz --one-top-level=featbit-agent
+cd featbit-agent
+
 # Run agent from command line
 # If the Api file is not executable, Use 'chmod +x Api' to allow execution of the executable file
-./Api
+./Api --urls "http://localhost:6100"
 ```
 
 If everything is fine, you should see the following output:
 
 ```log
 info: Microsoft.Hosting.Lifetime[14]
-      Now listening on: http://localhost:5000
+      Now listening on: http://localhost:6100
 info: Microsoft.Hosting.Lifetime[0]
       Application started. Press Ctrl+C to shut down.
 info: Microsoft.Hosting.Lifetime[0]
@@ -66,49 +67,55 @@ crashes or the server reboots. Here we use [systemd](https://systemd.io/) for ex
 
 #### Create the service file
 
-Create the service definition file:
+Create the service definition file using the following command:
+
+```bash
+sed -i "s,EXTRACTION_FOLDER,$PWD," featbit-agent.service.template > featbit-agent.service
+sudo mv featbit-agent.service /etc/systemd/system/featbit-agent.service
+```
+
+#### Configure the agent
+
+Open the service file for editing
 
 ```bash
 sudo vi /etc/systemd/system/featbit-agent.service
 ```
 
-Then copy-paste below content into it, **replacing the necessary configurations** and save the file.
+Inside the file, locate the following configuration options and set them according to your requirements:
 
-```ini
-[Unit]
-Description = The FeatBit Agent Service
+- **(Mandatory)** User: Configure the user for running the service.
+    ```ini
+    # Configure the user for running the service
+    # An example value: ubuntu
+    User=your-user-name
+    ```
 
-[Service]
-# !! replace with your own featbit agent extraction location path here, for example: /home/ubuntu/
-ExecStart=/your/location/to/featbit-agent/Api
-WorkingDirectory=/your/location/to/featbit-agent
+- **(Mandatory)** ApiKey: Get an agent key [here](https://docs.featbit.co/docs/relay-proxy/relay-proxy#create-a-relay-proxy-configuration)
+  ```ini
+  # Check the documentation here to obtain your agent key: https://docs.featbit.co/docs/relay-proxy/relay-proxy#create-a-relay-proxy-configuration
+  # An example value: rp-MzM3OTE5MTk0Njg2MQcuGyUHGX90WZvs9RbpZgug
+  Environment=ApiKey=your-api-key
+  ```
 
-# !! replace with your user name, for example: ubuntu
-User=your-user-name
+- (Optional) ASPNETCORE_URLS: If you want to change the URLs that the FeatBit Agent listen on (defaults to http://*:6100) for request, you need to
+set the below configuration:
 
-# !! replace with your agent key, for example: rp-MzM3OTE5MTk0**************
-Environment=ApiKey=your-api-key
+  ```ini
+  # Configure the URLs that the FeatBit Agent should listen on for requests.
+  # Defaults to http://*:6100
+  # An example value: http://*:5000;http://localhost:5001;https://hostname:5002
+  # For more details, please check the documentation at: https://learn.microsoft.com/en-us/aspnet/core/fundamentals/host/web-host?view=aspnetcore-6.0#server-urls
+  Environment=ASPNETCORE_URLS=http://*:6100
+  ```
 
-# set the url for featbit agent
-Environment=ASPNETCORE_URLS=http://*:6100
+Save the file after making the necessary configurations.
 
-# restart service after 10 seconds if the featbit agent crashes:
-Restart=always
-RestartSec=10
+#### Start the service and check its status
 
-KillSignal=SIGINT
-
-# to query logs using journalctl, set a logical name here
-SyslogIdentifier=featbit-agent
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Now, let's start the service and check its status:
+Now, start the agent service and check its status:
 
 ```bash
-# Start the FeatBit Agent service and check its status
 sudo systemctl start featbit-agent.service
 sudo systemctl status featbit-agent.service
 ```
@@ -128,7 +135,7 @@ If everything is fine, you should see the following output:
 
 Jun 15 03:35:26 ip-172-31-37-23 systemd[1]: Started The FeatBit Agent Service.
 Jun 15 03:35:28 ip-172-31-37-23 featbit-agent[2321]: info: Microsoft.Hosting.Lifetime[14]
-Jun 15 03:35:28 ip-172-31-37-23 featbit-agent[2321]:       Now listening on: http://localhost:5000
+Jun 15 03:35:28 ip-172-31-37-23 featbit-agent[2321]:       Now listening on: http://localhost:6100
 Jun 15 03:35:28 ip-172-31-37-23 featbit-agent[2321]: info: Microsoft.Hosting.Lifetime[0]
 Jun 15 03:35:28 ip-172-31-37-23 featbit-agent[2321]:       Application started. Press Ctrl+C to shut down.
 Jun 15 03:35:28 ip-172-31-37-23 featbit-agent[2321]: info: Microsoft.Hosting.Lifetime[0]
@@ -136,6 +143,8 @@ Jun 15 03:35:28 ip-172-31-37-23 featbit-agent[2321]:       Hosting environment: 
 Jun 15 03:35:28 ip-172-31-37-23 featbit-agent[2321]: info: Microsoft.Hosting.Lifetime[0]
 Jun 15 03:35:28 ip-172-31-37-23 featbit-agent[2321]:       Content root path: /home/ubuntu/featbit-agent/
 ```
+
+#### Enable automatic startup
 
 To enable automatic startup of the agent when the OS starts, run the following command:
 

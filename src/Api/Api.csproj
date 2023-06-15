@@ -17,6 +17,7 @@
 
     <ItemGroup>
         <None Update="featbit.ini" CopyToOutputDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+        <None Update="featbit-agent.service.template" CopyToOutputDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
     </ItemGroup>
 
 </Project>

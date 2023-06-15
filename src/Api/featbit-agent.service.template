@@ -1,0 +1,28 @@
+[Unit]
+Description=The FeatBit Agent Service
+
+[Service]
+ExecStart=EXTRACTION_FOLDER/Api
+WorkingDirectory=EXTRACTION_FOLDER
+
+# Configure the user for running the service
+# An example value: ubuntu
+User=
+
+# Check the documentation here to obtain your agent key: https://docs.featbit.co/docs/relay-proxy/relay-proxy#create-a-relay-proxy-configuration
+# An example value: rp-MzM3OTE5MTk0Njg2MQcuGyUHGX90WZvs9RbpZgug
+Environment=ApiKey=
+
+# Configure the URLs that the FeatBit Agent should listen on for requests.
+# Defaults to http://*:6100
+# An example value: http://*:5000;http://localhost:5001;https://hostname:5002
+# For more details, please check the documentation at: https://learn.microsoft.com/en-us/aspnet/core/fundamentals/host/web-host?view=aspnetcore-6.0#server-urls
+Environment=ASPNETCORE_URLS=http://*:6100
+
+Restart=always
+RestartSec=10
+KillSignal=SIGINT
+SyslogIdentifier=featbit-agent
+
+[Install]
+WantedBy=multi-user.target
