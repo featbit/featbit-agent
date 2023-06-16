@@ -37,7 +37,11 @@ jobs:
           ls -a
           chmod +x ./publish.sh
           ./publish.sh
-          ../../get-changelog.sh v${{ env.version }} > ${{ github.workspace }}-CHANGELOG.txt
+
+      - name: Generate Release Note
+        shell: bash
+        run: |
+          get-changelog.sh v${{ env.version }} > ${{ github.workspace }}-CHANGELOG.txt
           cat ${{ github.workspace }}-CHANGELOG.txt
 
       - name: Create Release
