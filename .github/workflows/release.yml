@@ -41,7 +41,7 @@ jobs:
       - name: Generate Release Note
         shell: bash
         run: |
-          get-changelog.sh v${{ env.version }} > ${{ github.workspace }}-CHANGELOG.txt
+          ./get-changelog.sh v${{ env.version }} > ${{ github.workspace }}-CHANGELOG.txt
           cat ${{ github.workspace }}-CHANGELOG.txt
 
       - name: Create Release
