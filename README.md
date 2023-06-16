@@ -70,7 +70,7 @@ crashes or the server reboots. Here we use [systemd](https://systemd.io/) for ex
 Create the service definition file using the following command:
 
 ```bash
-sed -i "s,EXTRACTION_FOLDER,$PWD," featbit-agent.service.template > featbit-agent.service
+sed "s,EXTRACTION_FOLDER,$PWD," featbit-agent.service.template > featbit-agent.service
 sudo mv featbit-agent.service /etc/systemd/system/featbit-agent.service
 ```
 
