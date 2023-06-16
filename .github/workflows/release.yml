@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version"
+        description: "Version (for example: 1.0.0)"
         required: true
 
 env:
@@ -37,6 +37,8 @@ jobs:
           ls -a
           chmod +x ./publish.sh
           ./publish.sh
+          ../../get-changelog.sh v${{ env.version }} > ${{ github.workspace }}-CHANGELOG.txt
+          cat ${{ github.workspace }}-CHANGELOG.txt
 
       - name: Create Release
         uses: softprops/action-gh-release@master
@@ -44,8 +46,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v${{ env.version }}
-          name: FeatBit Agent v${{ env.version }}
-          body: See the assets to download this version and install.
+          name: v${{ env.version }}
+          body_path: ${{ github.workspace }}-CHANGELOG.txt
           prerelease: false
           generate_release_notes: false
           files: ./src/Api/publish/*.tar.gz
