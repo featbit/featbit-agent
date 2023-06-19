@@ -26,6 +26,10 @@ You may consider setting up the FeatBit Agent in the following scenarios:
 
 ## Installation
 
+> **Note**
+> Before diving into the FeatBit Agent installation, you should have a good understanding of what
+> a [relay proxy](https://docs.featbit.co/docs/relay-proxy/relay-proxy) is.
+
 ### Download
 
 To begin, download the FeatBit Agent from the [GitHub releases](https://github.com/featbit/featbit-agent/releases) page
