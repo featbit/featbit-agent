@@ -11,10 +11,6 @@ public static class ServicesRegister
     public static WebApplicationBuilder RegisterServices(this WebApplicationBuilder builder, string[] args)
     {
         var services = builder.Services;
-        var configuration = builder.Configuration;
-
-        // add ini config
-        configuration.AddIniFile("featbit.ini", optional: false, reloadOnChange: false);
 
         // add controllers
         services.AddControllers();
