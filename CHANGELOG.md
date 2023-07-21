@@ -4,4 +4,4 @@ The first version of FeatBit Agent.
 
 # v1.0.1 ( 2023-07-21 )
 
-remove featbit.ini config
+Remove featbit.ini config
