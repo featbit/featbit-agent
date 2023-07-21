@@ -37,13 +37,13 @@ to your hosting server.
 
 ```bash
 # Choose your desired version, here we use linux-x64 for example
-wget https://github.com/featbit/featbit-agent/releases/download/v1.0.0/featbit_agent_linux-x64_1.0.0.tar.gz
+wget https://github.com/featbit/featbit-agent/releases/download/v1.0.1/featbit_agent_linux-x64_1.0.1.tar.gz
 ```
 
 Once the download is complete, perform a quick test to verify that Featbit Agent can run on your machine.
 
 ```bash
-tar -xvzf featbit_agent_linux-x64_1.0.0.tar.gz --one-top-level=featbit-agent
+tar -xvzf featbit_agent_linux-x64_1.0.1.tar.gz --one-top-level=featbit-agent
 cd featbit-agent
 
 # Run agent from command line
@@ -54,6 +54,7 @@ cd featbit-agent
 If everything is fine, you should see the following output:
 
 ```log
+...
 info: Microsoft.Hosting.Lifetime[14]
       Now listening on: http://localhost:6100
 info: Microsoft.Hosting.Lifetime[0]
