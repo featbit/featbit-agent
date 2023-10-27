@@ -28,7 +28,7 @@ You may consider setting up the FeatBit Agent in the following scenarios:
 
 > **Note**
 > Before diving into the FeatBit Agent installation, you should have a good understanding of what
-> a [relay proxy](https://docs.featbit.co/docs/relay-proxy/relay-proxy) is.
+> a [relay proxy](https://docs.featbit.co/relay-proxy/relay-proxy) is.
 
 ### Download
 
@@ -96,9 +96,9 @@ Inside the file, locate the following configuration options and set them accordi
     User=your-user-name
     ```
 
-- **(Mandatory)** ApiKey: Get an agent key [here](https://docs.featbit.co/docs/relay-proxy/relay-proxy#create-a-relay-proxy-configuration)
+- **(Mandatory)** ApiKey: Get an agent key [here](https://docs.featbit.co/relay-proxy/relay-proxy#create-a-relay-proxy-configuration)
   ```ini
-  # Check the documentation here to obtain your agent key: https://docs.featbit.co/docs/relay-proxy/relay-proxy#create-a-relay-proxy-configuration
+  # Check the documentation here to obtain your agent key: https://docs.featbit.co/relay-proxy/relay-proxy#create-a-relay-proxy-configuration
   # An example value: rp-MzM3OTE5MTk0Njg2MQcuGyUHGX90WZvs9RbpZgug
   Environment=ApiKey=your-api-key
   ```
