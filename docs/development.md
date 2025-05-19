@@ -18,6 +18,7 @@ If you need to build and reference this package locally, follow these steps:
 
 3. Pack the project into a local NuGet repository:
    ```bash
+   cd featbit/modules/evaluation-server
    # use "D:\Local Nuget" for example
    dotnet pack -c Release -o "D:\Local Nuget"
    ```
