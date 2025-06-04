@@ -1,19 +1,15 @@
 using Api.Setup;
-using Api.Persistence;
 
-// register services
-var webApplication = WebApplication.CreateBuilder(args)
-    .RegisterServices(args)
-    .Build();
+var builder = WebApplication.CreateBuilder(args);
 
-// ensure DbContext table created
+var apiKey = builder.Configuration["ApiKey"];
+if (string.IsNullOrEmpty(apiKey))
 {
-    using var scope = webApplication.Services.CreateScope();
-    var context = scope.ServiceProvider.GetRequiredService<FbDbContext>();
-    context.EnsureTableCreated();
+    Console.WriteLine("FeatBit Agent needs an API key to run and the ApiKey is not configured.");
+    return;
 }
 
-// setup middleware and run application
-webApplication
+builder.RegisterServices()
+    .Build()
     .SetupMiddleware()
     .Run();

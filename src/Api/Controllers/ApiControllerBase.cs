@@ -1,5 +1,5 @@
+using Domain.Shared;
 using Microsoft.AspNetCore.Mvc;
-using Streaming.Shared;
 
 namespace Api.Controllers;
 
@@ -12,7 +12,7 @@ public class ApiControllerBase : ControllerBase
         get
         {
             var authorization = Request.Headers.Authorization.ToString();
-            return Secret.TryParse(authorization, out var secret) ? secret.EnvId : Guid.Empty;
+            return Secret.TryParse(authorization, out var envId) ? envId : Guid.Empty;
         }
     }
 

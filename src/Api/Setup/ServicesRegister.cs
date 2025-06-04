@@ -1,14 +1,17 @@
+using Api.DataSynchronizer;
 using Api.Messaging;
+using Api.Services;
 using Api.Store;
-using Api.Persistence;
-using Microsoft.EntityFrameworkCore;
+using Domain.Messages;
+using Domain.Shared;
+using Streaming.Connections;
 using Streaming.DependencyInjection;
 
 namespace Api.Setup;
 
 public static class ServicesRegister
 {
-    public static WebApplicationBuilder RegisterServices(this WebApplicationBuilder builder, string[] args)
+    public static WebApplicationBuilder RegisterServices(this WebApplicationBuilder builder)
     {
         var services = builder.Services;
 
@@ -16,7 +19,8 @@ public static class ServicesRegister
         services.AddControllers();
 
         // health check dependencies
-        services.AddHealthChecks();
+        services.AddHealthChecks()
+            .AddCheck<DataSynchronizerHealthCheck>("DataSynchronizer");
 
         // cors
         services.AddCors(options => options.AddDefaultPolicy(policyBuilder =>
@@ -28,17 +32,22 @@ public static class ServicesRegister
         }));
 
         // streaming
-        services.AddStreamingCore()
-            .UseNullMessageQueue()
-            .UseStore<InMemoryStore>();
+        services.AddStreamingCore(x =>
+        {
+            x.SupportedTypes = [ConnectionType.Server, ConnectionType.Client];
+            x.CustomRpService = new NoopRelayProxyService();
+        });
 
-        // populate cache
-        services.AddHostedService<CachePopulationHostedService>();
+        var memoryStore = new InMemoryStore();
+        services.AddSingleton<IStore>(memoryStore);
+        services.AddSingleton<IAgentStore>(memoryStore);
 
-        // repository
-        services.AddDbContext<FbDbContext>(options => { options.UseSqlite("Data Source=featbit.db"); });
-        services.AddScoped<IRepository, SqliteRepository>();
-        
+        services.AddSingleton<IMessageProducer, NoneMessageProducer>();
+
+        // starting data synchronizer
+        services.AddSingleton<IDataSynchronizer, WebSocketDataSynchronizer>();
+        services.AddHostedService<DataSynchronizerHostedService>();
+
         // data change notifier
         services.AddTransient<IDataChangeNotifier, DataChangeNotifier>();
 
