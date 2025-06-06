@@ -45,6 +45,8 @@ internal sealed class InMemoryStore : IAgentStore, IStore
                     Version = envVersion;
                 }
             }
+
+            UpdatedAt = DateTime.UtcNow;
         }
 
         return ValueTask.CompletedTask;

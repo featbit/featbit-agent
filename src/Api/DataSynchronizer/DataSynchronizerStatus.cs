@@ -38,7 +38,7 @@ public enum DataSynchronizerStatus
     /// </summary>
     /// <remarks>
     /// This could be because it encountered an unrecoverable error (for instance, the Evaluation server
-    /// rejected the SDK key: an invalid SDK key will never become valid), or because the SDK client was
+    /// rejected the relay proxy key: an invalid key will never become valid), or because the client was
     /// explicitly shut down.
     /// </remarks>
     Stopped
