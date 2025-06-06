@@ -44,7 +44,7 @@ public static class ServicesRegister
 
         services.AddSingleton<IMessageProducer, NoneMessageProducer>();
 
-        // starting data synchronizer
+        // data synchronizer
         services.AddSingleton<IDataSynchronizer, WebSocketDataSynchronizer>();
         services.AddHostedService<DataSynchronizerHostedService>();
 

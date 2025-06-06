@@ -1,6 +1,7 @@
 using Api.Store;
 using Api.Models;
 using System.Text.Json;
+using Api.DataSynchronizer;
 using Api.Messaging;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,6 +9,7 @@ namespace Api.Controllers;
 
 public class ProxyController(
     IAgentStore agentStore,
+    IDataSynchronizer dataSynchronizer,
     IConfiguration configuration,
     IDataChangeNotifier dataChangeNotifier,
     ILogger<ProxyController> logger)
@@ -23,12 +25,17 @@ public class ProxyController(
 
         try
         {
-            return Ok(Status.Healthy(agentStore.UpdatedAt));
+            var state = new
+            {
+                dataSynchronizer.LastSyncAt
+            };
+
+            return Ok(Status.Healthy(state));
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "An exception occurred while checking the agent status.");
-            return Ok(Status.UnHealthy(null));
+            return Ok(Status.UnHealthy());
         }
     }
 

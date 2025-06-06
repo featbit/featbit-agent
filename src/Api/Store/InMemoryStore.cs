@@ -18,7 +18,6 @@ internal sealed class InMemoryStore : IAgentStore, IStore
 
     public string Name => "Memory";
     public long Version { get; private set; }
-    public DateTime? UpdatedAt { get; private set; }
 
     public ValueTask PopulateAsync(DataSet dataSet)
     {
@@ -45,8 +44,6 @@ internal sealed class InMemoryStore : IAgentStore, IStore
                     Version = envVersion;
                 }
             }
-
-            UpdatedAt = DateTime.UtcNow;
         }
 
         return ValueTask.CompletedTask;
@@ -60,8 +57,6 @@ internal sealed class InMemoryStore : IAgentStore, IStore
             {
                 UpdateItem(item);
             }
-
-            UpdatedAt = DateTime.UtcNow;
         }
 
         return ValueTask.CompletedTask;

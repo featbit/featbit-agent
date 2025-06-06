@@ -11,6 +11,7 @@ namespace Api.DataSynchronizer
     internal sealed class WebSocketDataSynchronizer : IDataSynchronizer
     {
         public DataSynchronizerStatus Status { get; private set; }
+        public DateTime? LastSyncAt { get; private set; }
 
         private readonly FbWebSocket _webSocket;
         private readonly TaskCompletionSource<bool> _initTcs;
@@ -94,6 +95,9 @@ namespace Api.DataSynchronizer
                 if (messageType == "data-sync")
                 {
                     await HandleDataSyncMessage();
+
+                    _logger.LogInformation("Data synchronization completed successfully.");
+                    LastSyncAt = DateTime.UtcNow;
                 }
 
                 return;

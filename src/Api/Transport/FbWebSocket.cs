@@ -54,7 +54,7 @@ internal sealed partial class FbWebSocket
             Log.InvokingEventHandler(_logger, nameof(OnConnected));
             _ = OnConnected?.Invoke();
 
-            // start websocket
+            // start websocket pipe
             _ = StartAsync();
         }
         catch (Exception ex)

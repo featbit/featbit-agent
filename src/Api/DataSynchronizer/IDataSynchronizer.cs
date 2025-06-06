@@ -8,6 +8,11 @@ namespace Api.DataSynchronizer
         DataSynchronizerStatus Status { get; }
 
         /// <summary>
+        /// Last time the data synchronizer synchronized data.
+        /// </summary>
+        DateTime? LastSyncAt { get; }
+
+        /// <summary>
         /// Starts the data synchronizer.
         /// </summary>
         /// <returns>a <c>Task</c> which is completed once the data synchronizer has finished starting up</returns>

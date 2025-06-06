@@ -30,7 +30,7 @@ public class DataSynchronizerHostedService(
                 logger.LogError(
                     "DataSynchronizer failed to start successfully within {StartWaitTime} milliseconds. " +
                     "This error usually indicates a connection issue with FeatBit or an invalid relay proxy token. " +
-                    "Please double-check your relay proxy token and streaming uri configuration.",
+                    "Please double-check your relay proxy API key and streaming uri configuration.",
                     startWaitTime
                 );
             }

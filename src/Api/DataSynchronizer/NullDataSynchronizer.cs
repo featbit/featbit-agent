@@ -3,10 +3,13 @@ namespace Api.DataSynchronizer;
 internal sealed class NullDataSynchronizer : IDataSynchronizer
 {
     public DataSynchronizerStatus Status { get; private set; }
+    public DateTime? LastSyncAt { get; private set; }
 
     public Task<bool> StartAsync()
     {
         Status = DataSynchronizerStatus.Stable;
+        LastSyncAt = DateTime.UtcNow;
+
         return Task.FromResult(true);
     }
 
