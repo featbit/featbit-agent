@@ -2,8 +2,10 @@ using System.Buffers;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
+using Api.Setup;
 using Api.Store;
 using Api.Transport;
+using Microsoft.Extensions.Options;
 using Streaming.Protocol;
 
 namespace Api.DataSynchronizer
@@ -21,15 +23,17 @@ namespace Api.DataSynchronizer
         private readonly ILogger<WebSocketDataSynchronizer> _logger;
 
         public WebSocketDataSynchronizer(
-            IConfiguration configuration,
+            IOptions<AgentOptions> options,
             IAgentStore store,
             ILoggerFactory loggerFactory)
         {
             _store = store;
             Status = DataSynchronizerStatus.Starting;
 
-            var streamingUri = configuration["StreamingUri"]!.TrimEnd('/');
-            var apiKey = configuration["ApiKey"];
+            var optionValues = options.Value;
+
+            var streamingUri = optionValues.StreamingUri.TrimEnd('/');
+            var apiKey = optionValues.ApiKey;
 
             var uri = new Uri($"{streamingUri}/streaming?type=relay-proxy&token={apiKey}");
             _webSocket = new FbWebSocket(uri, loggerFactory);

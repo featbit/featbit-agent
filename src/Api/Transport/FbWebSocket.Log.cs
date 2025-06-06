@@ -89,5 +89,9 @@ internal sealed partial class FbWebSocket
         [LoggerMessage(32, LogLevel.Error, "Exception occurred while closing websocket connection.",
             EventName = "CloseError")]
         public static partial void CloseError(ILogger logger, Exception exception);
+
+        [LoggerMessage(33, LogLevel.Information, "FbWebSocket is closed.",
+            EventName = "Closed")]
+        public static partial void Closed(ILogger logger);
     }
 }

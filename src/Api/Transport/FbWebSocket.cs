@@ -108,11 +108,16 @@ internal sealed partial class FbWebSocket
 
         try
         {
-            await _websocket.CloseAsync(
-                WebSocketCloseStatus.NormalClosure,
-                "Client initiated close",
-                cancellationToken
-            );
+            if (_websocket.IsOpen())
+            {
+                await _websocket.CloseAsync(
+                    WebSocketCloseStatus.NormalClosure,
+                    "Client initiated close",
+                    cancellationToken
+                );
+            }
+
+            Log.Closed(_logger);
         }
         catch (Exception ex)
         {
@@ -255,6 +260,10 @@ internal sealed partial class FbWebSocket
         if (closeStatus.HasValue && closeStatus != WebSocketCloseStatus.NormalClosure)
         {
             Log.AbnormallyClosed(_logger, closeStatus, closeDescription);
+        }
+        else
+        {
+            Log.Closed(_logger);
         }
     }
 

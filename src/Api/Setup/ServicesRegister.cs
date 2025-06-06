@@ -15,6 +15,8 @@ public static class ServicesRegister
     {
         var services = builder.Services;
 
+        services.AddOptionsWithValidateOnStart<AgentOptions, AgentOptionsValidation>().Bind(builder.Configuration);
+
         // add controllers
         services.AddControllers();
 
@@ -30,6 +32,9 @@ public static class ServicesRegister
                 .AllowAnyHeader()
                 .AllowAnyMethod();
         }));
+
+        // add httpclient
+        services.AddHttpClient();
 
         // streaming
         services.AddStreamingCore(x =>
