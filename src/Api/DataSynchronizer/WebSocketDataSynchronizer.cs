@@ -96,7 +96,7 @@ namespace Api.DataSynchronizer
                 {
                     await HandleDataSyncMessage();
 
-                    _logger.LogInformation("Data synchronization completed successfully.");
+                    _logger.LogInformation("Handled data-sync message successfully");
                     LastSyncAt = DateTime.UtcNow;
                 }
 

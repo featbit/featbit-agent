@@ -27,7 +27,8 @@ public class ProxyController(
         {
             var state = new
             {
-                dataSynchronizer.LastSyncAt
+                data_version = agentStore.Version,
+                data_last_synced_at = dataSynchronizer.LastSyncAt
             };
 
             return Ok(Status.Healthy(state));
