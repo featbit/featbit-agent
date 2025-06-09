@@ -17,8 +17,8 @@ public class Status
         return new Status(StatusType.Healthy, state);
     }
 
-    public static Status UnHealthy()
+    public static Status Unhealthy()
     {
-        return new Status(StatusType.UnHealthy, null);
+        return new Status(StatusType.Unhealthy, null);
     }
 }

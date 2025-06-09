@@ -36,7 +36,7 @@ public class ProxyController(
         catch (Exception ex)
         {
             logger.LogError(ex, "An exception occurred while checking the agent status.");
-            return Ok(Status.UnHealthy());
+            return Ok(Status.Unhealthy());
         }
     }
 
