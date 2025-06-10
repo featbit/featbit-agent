@@ -55,6 +55,7 @@ public class DataSyncMessageHandler(IAgentStore agentAgentStore, IDataChangeNoti
             {
                 var flagChangeMessage = new DataChangeMessage(
                     Topics.FeatureFlagChange,
+                    item.Id,
                     Encoding.UTF8.GetString(item.JsonBytes)
                 );
 
@@ -75,6 +76,7 @@ public class DataSyncMessageHandler(IAgentStore agentAgentStore, IDataChangeNoti
 
                 var segmentChangeMessage = new DataChangeMessage(
                     Topics.SegmentChange,
+                    item.Id,
                     JsonSerializer.Serialize(segmentChange)
                 );
 

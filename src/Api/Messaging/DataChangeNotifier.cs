@@ -33,8 +33,8 @@ public class DataChangeNotifier : IDataChangeNotifier
             await handler.HandleAsync(dcm.Message, CancellationToken.None);
 
             _logger.LogInformation(
-                "Handled data change message for topic {Topic} with message: {Message}",
-                dcm.Topic, dcm.Message
+                "Handled data change message for topic {Topic} (Item Id: {Id})",
+                dcm.Topic, dcm.Id
             );
         }
     }
