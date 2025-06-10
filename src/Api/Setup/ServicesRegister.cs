@@ -52,6 +52,7 @@ public static class ServicesRegister
         // data synchronizer
         services.AddSingleton<IDataSynchronizer, WebSocketDataSynchronizer>();
         services.AddHostedService<DataSynchronizerHostedService>();
+        services.AddTransient<IDataSyncMessageHandler, DataSyncMessageHandler>();
 
         // data change notifier
         services.AddTransient<IDataChangeNotifier, DataChangeNotifier>();
