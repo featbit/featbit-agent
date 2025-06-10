@@ -182,4 +182,15 @@ internal sealed class InMemoryStore : IAgentStore, IStore
         var secret = secretWithValue?.AsSecret();
         return Task.FromResult(secret);
     }
+
+    public ValueTask<string[]> GetFlagReferencesAsync(Guid envId, string segmentId)
+    {
+        var flagIds = _items
+            .Where(x => x.EnvId == envId && x.Type == StoreItemType.Flag)
+            .Where(x => x.HasSegmentReference(segmentId))
+            .Select(x => x.Id)
+            .ToArray();
+
+        return ValueTask.FromResult(flagIds);
+    }
 }

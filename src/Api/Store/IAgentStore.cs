@@ -11,4 +11,6 @@ public interface IAgentStore
     ValueTask<byte[]> GetDataSyncPayloadAsync();
 
     ValueTask<DataSetSnapshot> GetSnapshotAsync();
+
+    ValueTask<string[]> GetFlagReferencesAsync(Guid envId, string segmentId);
 }

@@ -1,41 +1,41 @@
-using Streaming.Connections;
-using Streaming.Protocol;
-using Streaming.Services;
+using Domain.Messages;
 
 namespace Api.Messaging;
 
-public class DataChangeNotifier(IConnectionManager connectionManager, IDataSyncService dataSyncService)
-    : IDataChangeNotifier
+public class DataChangeNotifier : IDataChangeNotifier
 {
-    public async Task NotifyAsync(IEnumerable<Guid> envIds, long timestamp)
+    private readonly Dictionary<string, IMessageConsumer> _dataChangeHandlers;
+    private readonly ILogger<DataChangeNotifier> _logger;
+
+    public DataChangeNotifier(
+        IEnumerable<IMessageConsumer> messageHandlers,
+        ILogger<DataChangeNotifier> logger)
     {
-        foreach (var envId in envIds)
-        {
-            await NotifyAsync(envId, timestamp);
-        }
+        _dataChangeHandlers = messageHandlers.ToDictionary(x => x.Topic, x => x);
+        _logger = logger;
     }
 
-    public async Task NotifyAsync(Guid envId, long timestamp)
+    public async Task NotifyAsync(DataChangeMessage[] dcms)
     {
-        var connections = connectionManager.GetEnvConnections(envId);
-        foreach (var connection in connections)
+        if (dcms.Length == 0)
         {
-            await NotifyConnectionAsync(connection);
+            return;
         }
 
-        return;
-
-        async Task NotifyConnectionAsync(Connection connection)
+        foreach (var dcm in dcms)
         {
-            object payload = connection.Type switch
+            if (!_dataChangeHandlers.TryGetValue(dcm.Topic, out var handler))
             {
-                ConnectionType.Client => await dataSyncService.GetClientSdkPayloadAsync(connection.EnvId, connection.User!, timestamp),
-                ConnectionType.Server => await dataSyncService.GetServerSdkPayloadAsync(connection.EnvId, timestamp),
-                _ => throw new ArgumentOutOfRangeException(nameof(connection), $"unsupported sdk type {connection.Type}")
-            };
+                _logger.LogWarning("No data change handler found for topic {Topic}.", dcm.Topic);
+                continue;
+            }
 
-            var serverMessage = new ServerMessage(MessageTypes.DataSync, payload);
-            await connection.SendAsync(serverMessage, CancellationToken.None);
+            await handler.HandleAsync(dcm.Message, CancellationToken.None);
+
+            _logger.LogInformation(
+                "Handled data change message for topic {Topic} with message: {Message}",
+                dcm.Topic, dcm.Message
+            );
         }
     }
 }

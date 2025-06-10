@@ -3,10 +3,8 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using Api.Setup;
-using Api.Store;
 using Api.Transport;
 using Microsoft.Extensions.Options;
-using Streaming.Protocol;
 
 namespace Api.DataSynchronizer
 {
@@ -19,15 +17,17 @@ namespace Api.DataSynchronizer
         private readonly TaskCompletionSource<bool> _initTcs;
         private bool _initialized;
 
-        private readonly IAgentStore _store;
+        private readonly IDataSyncMessageHandler _dataSyncMessageHandler;
         private readonly ILogger<WebSocketDataSynchronizer> _logger;
 
         public WebSocketDataSynchronizer(
             IOptions<AgentOptions> options,
-            IAgentStore store,
+            IDataSyncMessageHandler dataSyncMessageHandler,
             ILoggerFactory loggerFactory)
         {
-            _store = store;
+            _dataSyncMessageHandler = dataSyncMessageHandler;
+            _logger = loggerFactory.CreateLogger<WebSocketDataSynchronizer>();
+
             Status = DataSynchronizerStatus.Starting;
 
             var optionValues = options.Value;
@@ -45,8 +45,6 @@ namespace Api.DataSynchronizer
 
             _initTcs = new TaskCompletionSource<bool>();
             _initialized = false;
-
-            _logger = loggerFactory.CreateLogger<WebSocketDataSynchronizer>();
         }
 
         public Task<bool> StartAsync()
@@ -61,14 +59,14 @@ namespace Api.DataSynchronizer
             try
             {
                 // do data-sync once the connection is established
-                var payload = await _store.GetDataSyncPayloadAsync();
+                var payload = await _dataSyncMessageHandler.GetPayloadAsync();
 
                 _logger.LogInformation("Do data-sync with payload: {Payload}", Encoding.UTF8.GetString(payload));
                 await _webSocket.SendAsync(payload);
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(ex, "Exception occurred when performing data synchronization request");
+                _logger.LogError(ex, "Exception occurred when performing data synchronization request");
             }
         }
 
@@ -95,46 +93,17 @@ namespace Api.DataSynchronizer
                 var root = jsonDocument.RootElement;
                 var messageType = root.GetProperty("messageType").GetString();
 
-                // handle 'data-sync' message
                 if (messageType == "data-sync")
                 {
-                    await HandleDataSyncMessage();
+                    _logger.LogInformation(
+                        "Received data-sync message from server: {Message}",
+                        root.GetProperty("data").ToString()
+                    );
 
-                    _logger.LogInformation("Handled data-sync message successfully");
+                    // handle 'data-sync' message
+                    await _dataSyncMessageHandler.HandleAsync(root);
+
                     LastSyncAt = DateTime.UtcNow;
-                }
-
-                return;
-
-                async Task HandleDataSyncMessage()
-                {
-                    var data = root.GetProperty("data");
-                    var eventType = data.GetProperty("eventType").GetString();
-
-                    _logger.LogInformation("Received data-sync message from server: {Message}", data.ToString());
-
-                    switch (eventType)
-                    {
-                        case DataSyncEventTypes.RpFull:
-                            await _store.PopulateAsync(DataSet.FromJson(data));
-                            break;
-                        case DataSyncEventTypes.RpPatch:
-                        {
-                            var dataSet = DataSet.FromJson(data);
-                            var items = dataSet.Items
-                                .SelectMany(x => x.FeatureFlags.Concat(x.Segments))
-                                .ToArray();
-
-                            await _store.UpdateAsync(items);
-                            break;
-                        }
-                        case DataSyncEventTypes.Patch:
-                        {
-                            var patchDataSet = PatchDataSet.FromJson(data);
-                            await _store.UpdateAsync(patchDataSet.Items);
-                            break;
-                        }
-                    }
 
                     Status = DataSynchronizerStatus.Stable;
                     if (!_initialized)
@@ -142,6 +111,8 @@ namespace Api.DataSynchronizer
                         _initTcs.TrySetResult(true);
                         _initialized = true;
                     }
+
+                    _logger.LogInformation("Handled data-sync message successfully");
                 }
             }
         }

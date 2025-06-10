@@ -47,4 +47,32 @@ public class StoreItem
 
         return new StoreItem(id, envId, type, timestamp, jsonBytes);
     }
+
+    public bool HasSegmentReference(string segmentId)
+    {
+        if (Type != StoreItemType.Flag)
+        {
+            throw new InvalidOperationException("This method can only be called on flag items.");
+        }
+
+        using var json = JsonDocument.Parse(JsonBytes);
+        var root = json.RootElement;
+
+        var ruleConditions = root.GetProperty("rules").EnumerateArray()
+            .Select(rule => rule.GetProperty("conditions").EnumerateArray())
+            .SelectMany(conditions => conditions);
+
+        foreach (var condition in ruleConditions)
+        {
+            var property = condition.GetProperty("property").GetString();
+            var value = condition.GetProperty("value").GetString();
+
+            if (SegmentConsts.ConditionProperties.Contains(property) && value?.Contains(segmentId) == true)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
