@@ -165,8 +165,13 @@ internal sealed class InMemoryStore : IAgentStore, IStore
 
     public Task<byte[]> GetSegmentAsync(string id)
     {
-        var segment = _items.First(x => x.Id == id).JsonBytes;
-        return Task.FromResult(segment);
+        // shared segments can cross multiple envs and we return the latest one
+        var segment = _items
+            .Where(x => x.Id == id)
+            .OrderByDescending(x => x.Timestamp)
+            .First();
+
+        return Task.FromResult(segment.JsonBytes);
     }
 
     public Task<IEnumerable<byte[]>> GetSegmentsAsync(Guid envId, long timestamp)
