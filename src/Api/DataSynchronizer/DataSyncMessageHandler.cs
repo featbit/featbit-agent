@@ -31,7 +31,7 @@ public class DataSyncMessageHandler(IAgentStore agentAgentStore, IDataChangeNoti
                     .ToArray();
                 await agentAgentStore.UpdateAsync(items);
 
-                _ = OnItemsUpdated(items);
+                await OnItemsUpdated(items);
                 break;
             }
             case DataSyncEventTypes.Patch:
@@ -39,7 +39,7 @@ public class DataSyncMessageHandler(IAgentStore agentAgentStore, IDataChangeNoti
                 var patchDataSet = PatchDataSet.FromJson(data);
                 await agentAgentStore.UpdateAsync(patchDataSet.Items);
 
-                _ = OnItemsUpdated(patchDataSet.Items);
+                await OnItemsUpdated(patchDataSet.Items);
                 break;
             }
         }
@@ -51,14 +51,14 @@ public class DataSyncMessageHandler(IAgentStore agentAgentStore, IDataChangeNoti
 
         foreach (var item in items)
         {
-            await OnItemUpdated(item);
+            await AddDataChange(item);
         }
 
         await dataChangeNotifier.NotifyAsync(dataChanges.ToArray());
 
         return;
 
-        async Task OnItemUpdated(StoreItem item)
+        async Task AddDataChange(StoreItem item)
         {
             if (item.Type == StoreItemType.Flag)
             {

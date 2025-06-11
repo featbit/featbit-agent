@@ -78,6 +78,7 @@ namespace Api.DataSynchronizer
             }
             catch (Exception ex)
             {
+                Status = DataSynchronizerStatus.Interrupted;
                 _logger.LogError(ex, "Exception occurred when handling server message");
             }
 
