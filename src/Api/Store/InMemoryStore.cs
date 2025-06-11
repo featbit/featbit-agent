@@ -34,9 +34,11 @@ internal sealed class InMemoryStore : IAgentStore, IStore
                 _items.AddRange(item.Segments);
 
                 // update versions
-                var envVersion = item.FeatureFlags.Select(x => x.Timestamp)
+                var timestamps = item.FeatureFlags.Select(x => x.Timestamp)
                     .Concat(item.Segments.Select(x => x.Timestamp))
-                    .Max();
+                    .ToArray();
+
+                var envVersion = timestamps.Length != 0 ? timestamps.Max() : 0;
 
                 _envVersions[item.EnvId] = envVersion;
                 if (envVersion > Version)
@@ -63,7 +65,8 @@ internal sealed class InMemoryStore : IAgentStore, IStore
 
         void UpdateItem(StoreItem item)
         {
-            var existingItem = _items.FirstOrDefault(x => x.Id == item.Id);
+            // shared segment can cross multiple envs
+            var existingItem = _items.FirstOrDefault(x => x.Id == item.Id && x.EnvId == item.EnvId);
             if (existingItem != null && existingItem.Timestamp < item.Timestamp)
             {
                 existingItem.Update(item);
