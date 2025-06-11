@@ -8,10 +8,10 @@ using Streaming.Protocol;
 
 namespace Api.DataSynchronizer;
 
-public class DataSyncMessageHandler(IAgentStore agentAgentStore, IDataChangeNotifier dataChangeNotifier)
+public class DataSyncMessageHandler(IAgentStore agentStore, IDataChangeNotifier dataChangeNotifier)
     : IDataSyncMessageHandler
 {
-    public ValueTask<byte[]> GetRequestPayloadAsync() => agentAgentStore.GetDataSyncPayloadAsync();
+    public ValueTask<byte[]> GetRequestPayloadAsync() => agentStore.GetDataSyncPayloadAsync();
 
     public async Task HandleAsync(JsonElement message)
     {
@@ -21,7 +21,7 @@ public class DataSyncMessageHandler(IAgentStore agentAgentStore, IDataChangeNoti
         switch (eventType)
         {
             case DataSyncEventTypes.RpFull:
-                await agentAgentStore.PopulateAsync(DataSet.FromJson(data));
+                await agentStore.PopulateAsync(DataSet.FromJson(data));
                 break;
             case DataSyncEventTypes.RpPatch:
             {
@@ -29,7 +29,7 @@ public class DataSyncMessageHandler(IAgentStore agentAgentStore, IDataChangeNoti
                 var items = dataSet.Items
                     .SelectMany(x => x.FeatureFlags.Concat(x.Segments))
                     .ToArray();
-                await agentAgentStore.UpdateAsync(items);
+                await agentStore.UpdateAsync(items);
 
                 await OnItemsUpdated(items);
                 break;
@@ -37,7 +37,7 @@ public class DataSyncMessageHandler(IAgentStore agentAgentStore, IDataChangeNoti
             case DataSyncEventTypes.Patch:
             {
                 var patchDataSet = PatchDataSet.FromJson(data);
-                await agentAgentStore.UpdateAsync(patchDataSet.Items);
+                await agentStore.UpdateAsync(patchDataSet.Items);
 
                 await OnItemsUpdated(patchDataSet.Items);
                 break;
@@ -76,7 +76,7 @@ public class DataSyncMessageHandler(IAgentStore agentAgentStore, IDataChangeNoti
                 using var segment = JsonDocument.Parse(item.JsonBytes);
 
                 var envId = segment.RootElement.GetProperty("envId").GetGuid();
-                var affectedIds = await agentAgentStore.GetFlagReferencesAsync(envId, item.Id);
+                var affectedIds = await agentStore.GetFlagReferencesAsync(envId, item.Id);
 
                 JsonObject payload = new()
                 {
