@@ -65,12 +65,18 @@ public class StoreItem
         foreach (var condition in ruleConditions)
         {
             var property = condition.GetProperty("property").GetString();
-            var value = condition.GetProperty("value").GetString();
-
-            if (SegmentConsts.ConditionProperties.Contains(property) && value?.Contains(segmentId) == true)
+            if (SegmentConsts.ConditionProperties.Contains(property) == false)
             {
-                return true;
+                continue;
             }
+
+            var value = condition.GetProperty("value").GetString();
+            if (value?.Contains(segmentId) == false)
+            {
+                continue;
+            }
+
+            return true;
         }
 
         return false;

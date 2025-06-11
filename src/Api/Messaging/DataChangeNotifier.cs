@@ -15,26 +15,26 @@ public class DataChangeNotifier : IDataChangeNotifier
         _logger = logger;
     }
 
-    public async Task NotifyAsync(DataChangeMessage[] dcms)
+    public async Task NotifyAsync(DataChangeMessage[] dataChanges)
     {
-        if (dcms.Length == 0)
+        if (dataChanges.Length == 0)
         {
             return;
         }
 
-        foreach (var dcm in dcms)
+        foreach (var dataChange in dataChanges)
         {
-            if (!_dataChangeHandlers.TryGetValue(dcm.Topic, out var handler))
+            if (!_dataChangeHandlers.TryGetValue(dataChange.Topic, out var handler))
             {
-                _logger.LogWarning("No data change handler found for topic {Topic}.", dcm.Topic);
+                _logger.LogWarning("No data change handler found for topic {Topic}.", dataChange.Topic);
                 continue;
             }
 
-            await handler.HandleAsync(dcm.Message, CancellationToken.None);
+            await handler.HandleAsync(dataChange.Message, CancellationToken.None);
 
             _logger.LogInformation(
                 "Handled data change message for topic {Topic} (Item Id: {Id})",
-                dcm.Topic, dcm.Id
+                dataChange.Topic, dataChange.Id
             );
         }
     }

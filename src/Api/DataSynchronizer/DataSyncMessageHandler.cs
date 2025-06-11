@@ -11,7 +11,7 @@ namespace Api.DataSynchronizer;
 public class DataSyncMessageHandler(IAgentStore agentAgentStore, IDataChangeNotifier dataChangeNotifier)
     : IDataSyncMessageHandler
 {
-    public ValueTask<byte[]> GetPayloadAsync() => agentAgentStore.GetDataSyncPayloadAsync();
+    public ValueTask<byte[]> GetRequestPayloadAsync() => agentAgentStore.GetDataSyncPayloadAsync();
 
     public async Task HandleAsync(JsonElement message)
     {
@@ -47,43 +47,51 @@ public class DataSyncMessageHandler(IAgentStore agentAgentStore, IDataChangeNoti
 
     private async Task OnItemsUpdated(StoreItem[] items)
     {
-        List<DataChangeMessage> dataChangeMessages = [];
+        List<DataChangeMessage> dataChanges = [];
 
         foreach (var item in items)
         {
+            await OnItemUpdated(item);
+        }
+
+        await dataChangeNotifier.NotifyAsync(dataChanges.ToArray());
+
+        return;
+
+        async Task OnItemUpdated(StoreItem item)
+        {
             if (item.Type == StoreItemType.Flag)
             {
-                var flagChangeMessage = new DataChangeMessage(
+                var flagChange = new DataChangeMessage(
                     Topics.FeatureFlagChange,
                     item.Id,
                     Encoding.UTF8.GetString(item.JsonBytes)
                 );
 
-                dataChangeMessages.Add(flagChangeMessage);
+                dataChanges.Add(flagChange);
             }
-            else if (item.Type == StoreItemType.Segment)
+
+            if (item.Type == StoreItemType.Segment)
             {
                 using var segment = JsonDocument.Parse(item.JsonBytes);
 
                 var envId = segment.RootElement.GetProperty("envId").GetGuid();
                 var affectedIds = await agentAgentStore.GetFlagReferencesAsync(envId, item.Id);
 
-                JsonObject segmentChange = new()
+                JsonObject payload = new()
                 {
                     ["segment"] = JsonSerializer.SerializeToNode(segment),
                     ["affectedFlagIds"] = JsonSerializer.SerializeToNode(affectedIds)
                 };
 
-                var segmentChangeMessage = new DataChangeMessage(
+                var segmentChange = new DataChangeMessage(
                     Topics.SegmentChange,
                     item.Id,
-                    JsonSerializer.Serialize(segmentChange)
+                    JsonSerializer.Serialize(payload)
                 );
 
-                dataChangeMessages.Add(segmentChangeMessage);
+                dataChanges.Add(segmentChange);
             }
         }
-
-        await dataChangeNotifier.NotifyAsync(dataChangeMessages.ToArray());
     }
 }

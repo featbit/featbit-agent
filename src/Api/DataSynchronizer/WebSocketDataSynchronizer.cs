@@ -59,7 +59,7 @@ namespace Api.DataSynchronizer
             try
             {
                 // do data-sync once the connection is established
-                var payload = await _dataSyncMessageHandler.GetPayloadAsync();
+                var payload = await _dataSyncMessageHandler.GetRequestPayloadAsync();
 
                 _logger.LogInformation("Do data-sync with payload: {Payload}", Encoding.UTF8.GetString(payload));
                 await _webSocket.SendAsync(payload);
