@@ -57,17 +57,17 @@ internal sealed class InMemoryStore : IAgentStore, IStore
         {
             foreach (var item in items)
             {
-                UpdateItem(item);
+                UpsertItem(item);
             }
         }
 
         return ValueTask.CompletedTask;
 
-        void UpdateItem(StoreItem item)
+        void UpsertItem(StoreItem item)
         {
             // shared segment can cross multiple envs
             var existingItem = _items.FirstOrDefault(x => x.Id == item.Id && x.EnvId == item.EnvId);
-            if (existingItem != null && existingItem.Timestamp < item.Timestamp)
+            if (existingItem != null && existingItem.Timestamp <= item.Timestamp)
             {
                 existingItem.Update(item);
             }
