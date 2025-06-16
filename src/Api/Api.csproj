@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="FeatBit.EvaluationServer.Streaming" Version="2.3.0" />
+        <PackageReference Include="FeatBit.EvaluationServer.Streaming" Version="5.0.6-local.5" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.16" />
     </ItemGroup>
 

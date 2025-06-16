@@ -1,47 +1,41 @@
-using Streaming.Connections;
-using Streaming.Protocol;
-using Streaming.Services;
+using Domain.Messages;
 
 namespace Api.Messaging;
 
 public class DataChangeNotifier : IDataChangeNotifier
 {
-    private readonly IConnectionManager _connectionManager;
-    private readonly IDataSyncService _dataSyncService;
+    private readonly Dictionary<string, IMessageConsumer> _dataChangeHandlers;
+    private readonly ILogger<DataChangeNotifier> _logger;
 
-    public DataChangeNotifier(IConnectionManager connectionManager, IDataSyncService dataSyncService)
+    public DataChangeNotifier(
+        IEnumerable<IMessageConsumer> messageHandlers,
+        ILogger<DataChangeNotifier> logger)
     {
-        _connectionManager = connectionManager;
-        _dataSyncService = dataSyncService;
+        _dataChangeHandlers = messageHandlers.ToDictionary(x => x.Topic, x => x);
+        _logger = logger;
     }
 
-    public async Task NotifyAsync(IEnumerable<Guid> envIds, long timestamp)
+    public async Task NotifyAsync(DataChangeMessage[] dataChanges)
     {
-        foreach (var envId in envIds)
+        if (dataChanges.Length == 0)
         {
-            await NotifyAsync(envId, timestamp);
-        }
-    }
-
-    public async Task NotifyAsync(Guid envId, long timestamp)
-    {
-        var connections = _connectionManager.GetEnvConnections(envId);
-        foreach (var connection in connections)
-        {
-            await NotifyConnectionAsync(connection);
+            return;
         }
 
-        async Task NotifyConnectionAsync(Connection connection)
+        foreach (var dataChange in dataChanges)
         {
-            object payload = connection.Type switch
+            if (!_dataChangeHandlers.TryGetValue(dataChange.Topic, out var handler))
             {
-                ConnectionType.Client => await _dataSyncService.GetClientSdkPayloadAsync(connection.EnvId, connection.User!, timestamp),
-                ConnectionType.Server => await _dataSyncService.GetServerSdkPayloadAsync(connection.EnvId, timestamp),
-                _ => throw new ArgumentOutOfRangeException(nameof(connection), $"unsupported sdk type {connection.Type}")
-            };
+                _logger.LogWarning("No data change handler found for topic {Topic}.", dataChange.Topic);
+                continue;
+            }
 
-            var serverMessage = new ServerMessage(MessageTypes.DataSync, payload);
-            await connection.SendAsync(serverMessage, default);
+            await handler.HandleAsync(dataChange.Message, CancellationToken.None);
+
+            _logger.LogInformation(
+                "Handled data change message for topic {Topic} (Item Id: {Id})",
+                dataChange.Topic, dataChange.Id
+            );
         }
     }
 }

@@ -4,24 +4,21 @@ using Streaming.Services;
 
 namespace Api.Controllers;
 
-public class SdkController : ApiControllerBase
+public class SdkController(IDataSyncService dataSyncService) : ApiControllerBase
 {
-    private readonly IDataSyncService _dataSyncService;
-
-    public SdkController(IDataSyncService dataSyncService)
-    {
-        _dataSyncService = dataSyncService;
-    }
-
     [HttpGet("server/latest-all")]
-    public async Task<IActionResult> GetServerSideSdkPayloadAsync()
+    public async Task<IActionResult> GetServerSideSdkPayloadAsync([FromQuery] long timestamp = 0)
     {
         if (EnvId == Guid.Empty)
         {
             return Unauthorized();
         }
 
-        var payload = await _dataSyncService.GetServerSdkPayloadAsync(EnvId, 0);
+        var payload = await dataSyncService.GetServerSdkPayloadAsync(EnvId, timestamp);
+        if (payload.IsEmpty())
+        {
+            return Ok();
+        }
 
         var bootstrap = new
         {
@@ -33,7 +30,7 @@ public class SdkController : ApiControllerBase
     }
 
     [HttpPost("client/latest-all")]
-    public async Task<IActionResult> GetClientSdkPayloadAsync(EndUser endUser)
+    public async Task<IActionResult> GetClientSdkPayloadAsync(EndUser endUser, [FromQuery] long timestamp = 0)
     {
         if (EnvId == Guid.Empty)
         {
@@ -45,14 +42,17 @@ public class SdkController : ApiControllerBase
             return BadRequest("invalid end user");
         }
 
-        var payload = await _dataSyncService.GetClientSdkPayloadAsync(EnvId, endUser, 0);
-
-        var bootstrap = payload.FeatureFlags.Select(x => new
+        var payload = await dataSyncService.GetClientSdkPayloadAsync(EnvId, endUser, timestamp);
+        if (payload.IsEmpty())
         {
-            x.Id,
-            x.Variation,
-            x.VariationType
-        });
+            return Ok();
+        }
+
+        var bootstrap = new
+        {
+            messageType = "data-sync",
+            data = payload
+        };
 
         return new JsonResult(bootstrap);
     }

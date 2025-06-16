@@ -4,21 +4,21 @@ public class Status
 {
     public string Type { get; set; }
 
-    public DateTime? LastSyncAt { get; set; }
+    public object? State { get; set; }
 
-    public Status(string type, DateTime? lastSyncAt)
+    public Status(string type, object? state)
     {
         Type = type;
-        LastSyncAt = lastSyncAt;
+        State = state;
     }
 
-    public static Status Healthy(DateTime? lastSyncAt)
+    public static Status Healthy(object state)
     {
-        return new Status(StatusType.Healthy, lastSyncAt);
+        return new Status(StatusType.Healthy, state);
     }
 
-    public static Status UnHealthy(DateTime? lastSyncAt)
+    public static Status Unhealthy()
     {
-        return new Status(StatusType.UnHealthy, lastSyncAt);
+        return new Status(StatusType.Unhealthy, null);
     }
 }
