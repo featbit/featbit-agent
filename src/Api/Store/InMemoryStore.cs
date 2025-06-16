@@ -67,13 +67,15 @@ internal sealed class InMemoryStore : IAgentStore, IStore
         {
             // shared segment can cross multiple envs
             var existingItem = _items.FirstOrDefault(x => x.Id == item.Id && x.EnvId == item.EnvId);
-            if (existingItem != null && existingItem.Timestamp <= item.Timestamp)
+            if (existingItem == null)
             {
-                existingItem.Update(item);
-            }
-            else
-            {
+                // if the item doesn't exist, add it
                 _items.Add(item);
+            }
+            else if (existingItem.Timestamp <= item.Timestamp)
+            {
+                // if the item exists and the new item has a newer timestamp, update it
+                existingItem.Update(item);
             }
 
             // update versions
