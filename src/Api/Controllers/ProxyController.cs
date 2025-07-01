@@ -1,47 +1,36 @@
 using Api.Store;
-using Api.Models;
 using System.Text.Json;
-using Api.DataSynchronizer;
+using Api.Services;
+using Api.Setup;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace Api.Controllers;
 
 public class ProxyController(
     IAgentStore agentStore,
-    IDataSynchronizer dataSynchronizer,
-    IConfiguration configuration,
-    ILogger<ProxyController> logger)
+    IStatusProvider statusProvider,
+    IOptions<AgentOptions> options)
     : ApiControllerBase
 {
+    private readonly AgentOptions _agentOptions = options.Value;
+
     [HttpGet("status")]
     public IActionResult GetStatus()
     {
-        if (ApiKey != configuration["ApiKey"])
+        if (ApiKey != _agentOptions.ApiKey)
         {
             return Unauthorized();
         }
 
-        try
-        {
-            var state = new
-            {
-                data_version = agentStore.Version,
-                data_last_synced_at = dataSynchronizer.LastSyncAt
-            };
-
-            return Ok(Status.Healthy(state));
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "An exception occurred while checking the agent status.");
-            return Ok(Status.Unhealthy());
-        }
+        var status = statusProvider.GetStatus();
+        return Ok(status);
     }
 
     [HttpPost("bootstrap")]
     public async Task<IActionResult> Bootstrap(JsonElement jsonElement)
     {
-        if (ApiKey != configuration["ApiKey"])
+        if (ApiKey != _agentOptions.ApiKey)
         {
             return Unauthorized();
         }
@@ -55,7 +44,7 @@ public class ProxyController(
     [HttpGet("backup")]
     public async Task<IActionResult> Backup()
     {
-        if (ApiKey != configuration["ApiKey"])
+        if (ApiKey != _agentOptions.ApiKey)
         {
             return Unauthorized();
         }

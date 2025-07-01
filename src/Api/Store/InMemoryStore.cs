@@ -17,7 +17,36 @@ internal sealed class InMemoryStore : IAgentStore, IStore
     private readonly List<StoreItem> _items = [];
 
     public string Name => "Memory";
+
+    public string AgentId { get; private set; } = string.Empty;
+
+    public string Serves
+    {
+        get
+        {
+            var envs = _secrets
+                .GroupBy(x => x.EnvId)
+                .Select(envSecrets => envSecrets.First())
+                .Select(envSecret => $"{envSecret.ProjectKey}:{envSecret.EnvKey}");
+
+            var served = string.Join(",", envs);
+            return served;
+        }
+    }
+
     public long Version { get; private set; }
+
+    public ValueTask SaveAgentIdAsync(string agentId)
+    {
+        if (string.IsNullOrWhiteSpace(agentId))
+        {
+            throw new ArgumentException("Agent ID cannot be null or empty.", nameof(agentId));
+        }
+
+        AgentId = agentId;
+
+        return ValueTask.CompletedTask;
+    }
 
     public ValueTask PopulateAsync(DataSet dataSet)
     {

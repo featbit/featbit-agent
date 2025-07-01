@@ -1,3 +1,5 @@
+using Api.Shared;
+
 namespace Api.DataSynchronizer
 {
     public interface IDataSynchronizer
@@ -23,5 +25,11 @@ namespace Api.DataSynchronizer
         /// </summary>
         /// <returns>The <c>Task</c></returns>
         Task StopAsync(CancellationToken cancellation);
+
+        /// <summary>
+        /// Synchronizes the status of the agent with the server.
+        /// </summary>
+        /// <returns></returns>
+        Task SyncStatusAsync(StatusSyncPayload payload, CancellationToken cancellation = default);
     }
 }

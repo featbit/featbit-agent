@@ -4,6 +4,10 @@ namespace Api.Setup;
 
 public class AgentOptions
 {
+    public string Mode { get; set; } = AgentMode.Auto;
+
+    public string AgentId { get; set; } = string.Empty;
+
     public string ApiKey { get; set; } = string.Empty;
 
     public string StreamingUri { get; set; } = string.Empty;
@@ -13,10 +17,23 @@ public class AgentOptions
     public string? EventUri { get; set; } = string.Empty;
 }
 
-public class AgentOptionsValidation : IValidateOptions<AgentOptions>
+public class AgentOptionsValidation(ILogger<AgentOptionsValidation> logger) : IValidateOptions<AgentOptions>
 {
     public ValidateOptionsResult Validate(string? name, AgentOptions options)
     {
+        var mode = options.Mode;
+        if (!AgentMode.IsDefined(mode))
+        {
+            return ValidateOptionsResult.Fail(
+                $"Agent mode '{mode}' is not defined. Supported modes are: {string.Join(", ", AgentMode.All)}."
+            );
+        }
+
+        if (mode == AgentMode.Auto && string.IsNullOrWhiteSpace(options.AgentId))
+        {
+            return ValidateOptionsResult.Fail("AgentId is required when the mode is set to 'Auto'.");
+        }
+
         var apiKey = options.ApiKey;
         if (string.IsNullOrWhiteSpace(apiKey))
         {
