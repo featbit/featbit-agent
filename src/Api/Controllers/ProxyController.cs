@@ -1,5 +1,6 @@
 using Api.Store;
 using System.Text.Json;
+using Api.Messaging;
 using Api.Services;
 using Api.Setup;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +11,7 @@ namespace Api.Controllers;
 public class ProxyController(
     IAgentStore agentStore,
     IStatusProvider statusProvider,
+    IDataChangeNotifier dataChangeNotifier,
     IOptions<AgentOptions> options)
     : ApiControllerBase
 {
@@ -37,6 +39,13 @@ public class ProxyController(
 
         var dataSet = DataSet.FromJson(jsonElement);
         await agentStore.PopulateAsync(dataSet);
+
+        // Notify all environments about the data change
+        var envIds = dataSet.Items.Select(x => x.EnvId);
+        foreach (var envId in envIds)
+        {
+            await dataChangeNotifier.NotifyAsync(envId);
+        }
 
         return Ok();
     }
