@@ -13,7 +13,7 @@ public class StatusSyncHostedService(
     IOptions<AgentOptions> agentOptions,
     ILogger<StatusSyncHostedService> logger) : IHostedService
 {
-    private readonly PeriodicTimer _timer = new(TimeSpan.FromMinutes(1));
+    private readonly TimeSpan _syncInterval = TimeSpan.FromMinutes(1);
     private readonly AgentOptions _agentOptions = agentOptions.Value;
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -24,7 +24,8 @@ public class StatusSyncHostedService(
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(agentStore.AgentId))
+        var agentId = agentStore.AgentId;
+        if (string.IsNullOrWhiteSpace(agentId))
         {
             logger.LogError(
                 "Agent running status cannot be synced because agent registration has not been completed successfully."
@@ -32,42 +33,36 @@ public class StatusSyncHostedService(
             return;
         }
 
-        logger.LogInformation("Starting agent status sync with agent ID: {AgentId}", agentStore.AgentId);
+        logger.LogInformation("Starting agent status sync with agent ID: {AgentId}", agentId);
 
-        while (await _timer.WaitForNextTickAsync(cancellationToken))
+        while (!cancellationToken.IsCancellationRequested)
         {
-            await SyncStatusAsync(cancellationToken);
+            try
+            {
+                var status = statusProvider.GetStatus();
+                var payload = new StatusSyncPayload(agentId, status);
+                await dataSynchronizer.SyncStatusAsync(payload, cancellationToken);
+
+                logger.LogInformation("Agent status synced.");
+
+                // Wait for the next sync interval
+                await Task.Delay(_syncInterval, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                // ignore
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Exception occurred while syncing agent status");
+            }
         }
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        _timer.Dispose();
-
         logger.LogInformation("Agent status sync stopped.");
 
         return Task.CompletedTask;
-    }
-
-    private async Task SyncStatusAsync(CancellationToken ct = default)
-    {
-        var agentId = agentStore.AgentId;
-        if (string.IsNullOrWhiteSpace(agentId))
-        {
-            return;
-        }
-
-        try
-        {
-            var status = statusProvider.GetStatus();
-            var payload = new StatusSyncPayload(agentId, status);
-
-            await dataSynchronizer.SyncStatusAsync(payload, ct);
-            logger.LogInformation("Agent status synced.");
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Exception occurred while syncing agent status");
-        }
     }
 }
