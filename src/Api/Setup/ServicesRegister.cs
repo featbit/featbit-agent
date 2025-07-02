@@ -22,7 +22,7 @@ public static class ServicesRegister
 
         // health check dependencies
         services.AddHealthChecks()
-            .AddCheck<DataSynchronizerHealthCheck>("DataSynchronizer");
+            .AddCheck<DefaultHealthCheck>("Default Health Check");
 
         // cors
         services.AddCors(options => options.AddDefaultPolicy(policyBuilder =>

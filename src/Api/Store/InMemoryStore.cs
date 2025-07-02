@@ -18,7 +18,9 @@ internal sealed class InMemoryStore : IAgentStore, IStore
 
     public string Name => "Memory";
 
-    public string AgentId { get; private set; } = string.Empty;
+    public bool Initialized { get; private set; }
+
+    public long Version { get; private set; }
 
     public string Serves
     {
@@ -34,7 +36,7 @@ internal sealed class InMemoryStore : IAgentStore, IStore
         }
     }
 
-    public long Version { get; private set; }
+    public string AgentId { get; private set; } = string.Empty;
 
     public ValueTask SaveAgentIdAsync(string agentId)
     {
@@ -75,6 +77,8 @@ internal sealed class InMemoryStore : IAgentStore, IStore
                     Version = envVersion;
                 }
             }
+
+            Initialized = true;
         }
 
         return ValueTask.CompletedTask;

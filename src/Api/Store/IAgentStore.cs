@@ -2,6 +2,8 @@ namespace Api.Store;
 
 public interface IAgentStore
 {
+    bool Initialized { get; }
+
     long Version { get; }
 
     string Serves { get; }

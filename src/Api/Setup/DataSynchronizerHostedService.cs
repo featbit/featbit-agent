@@ -1,8 +1,10 @@
 using Api.DataSynchronizer;
+using Microsoft.Extensions.Options;
 
 namespace Api.Setup;
 
 public class DataSynchronizerHostedService(
+    IOptions<AgentOptions> options,
     IDataSynchronizer dataSynchronizer,
     ILogger<DataSynchronizerHostedService> logger)
     : IHostedService
@@ -11,6 +13,14 @@ public class DataSynchronizerHostedService(
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
+        if (options.Value.Mode != AgentMode.Auto)
+        {
+            logger.LogInformation(
+                "Agent is not in auto mode and no data synchronizer will be started. You will need to synchronize data manually."
+            );
+            return Task.CompletedTask;
+        }
+
         var startWaitTime = StartWaitTime.TotalMilliseconds;
 
         logger.LogInformation(
