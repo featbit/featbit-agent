@@ -15,13 +15,18 @@ public class DefaultHealthCheck(
         CancellationToken cancellationToken = default)
     {
         var checkResult = options.Value.Mode == AgentMode.Auto
-            ? CheckDataSynchronizer()
-            : CheckAgentStore();
+            ? CheckAuto()
+            : CheckManual();
 
         return Task.FromResult(checkResult);
 
-        HealthCheckResult CheckDataSynchronizer()
+        HealthCheckResult CheckAuto()
         {
+            if (!agentStore.Initialized)
+            {
+                return HealthCheckResult.Unhealthy("Agent store is not initialized.");
+            }
+
             return dataSynchronizer.Status switch
             {
                 DataSynchronizerStatus.Stable => HealthCheckResult.Healthy(),
@@ -30,11 +35,11 @@ public class DefaultHealthCheck(
             };
         }
 
-        HealthCheckResult CheckAgentStore()
+        HealthCheckResult CheckManual()
         {
             return agentStore.Initialized
                 ? HealthCheckResult.Healthy()
-                : HealthCheckResult.Unhealthy();
+                : HealthCheckResult.Unhealthy("Agent store is not initialized.");
         }
     }
 }
