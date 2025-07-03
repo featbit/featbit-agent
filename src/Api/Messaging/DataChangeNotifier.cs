@@ -18,15 +18,17 @@ public class DataChangeNotifier : IDataChangeNotifier
         IEnumerable<IMessageConsumer> messageHandlers,
         ILogger<DataChangeNotifier> logger)
     {
-        _dataChangeHandlers = messageHandlers.ToDictionary(x => x.Topic, x => x);
-        _logger = logger;
         _connectionManager = connectionManager;
         _dataSyncService = dataSyncService;
+        _dataChangeHandlers = messageHandlers.ToDictionary(x => x.Topic, x => x);
+        _logger = logger;
     }
 
     public async Task NotifyAsync(Guid envId)
     {
         var connections = _connectionManager.GetEnvConnections(envId);
+
+        var serverPayload = await _dataSyncService.GetServerSdkPayloadAsync(envId, 0);
         foreach (var connection in connections)
         {
             await NotifyConnectionAsync(connection);
@@ -48,8 +50,8 @@ public class DataChangeNotifier : IDataChangeNotifier
 
             object payload = connection.Type switch
             {
-                ConnectionType.Client => await _dataSyncService.GetClientSdkPayloadAsync(connection.EnvId, connection.User!, 0),
-                ConnectionType.Server => await _dataSyncService.GetServerSdkPayloadAsync(connection.EnvId, 0),
+                ConnectionType.Client => await _dataSyncService.GetClientSdkPayloadAsync(envId, connection.User!, 0),
+                ConnectionType.Server => serverPayload,
                 _ => throw new ArgumentOutOfRangeException(nameof(connection), $"unsupported sdk type {connection.Type}")
             };
 

@@ -17,7 +17,7 @@ public class AgentOptions
     public string? EventUri { get; set; } = string.Empty;
 }
 
-public class AgentOptionsValidation(ILogger<AgentOptionsValidation> logger) : IValidateOptions<AgentOptions>
+public class AgentOptionsValidation : IValidateOptions<AgentOptions>
 {
     public ValidateOptionsResult Validate(string? name, AgentOptions options)
     {
