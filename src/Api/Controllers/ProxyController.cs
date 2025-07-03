@@ -15,12 +15,12 @@ public class ProxyController(
     IOptions<AgentOptions> options)
     : ApiControllerBase
 {
-    private readonly AgentOptions _agentOptions = options.Value;
+    private readonly AgentOptions _options = options.Value;
 
     [HttpGet("status")]
     public IActionResult GetStatus()
     {
-        if (ApiKey != _agentOptions.ApiKey)
+        if (ApiKey != _options.ApiKey)
         {
             return Unauthorized();
         }
@@ -32,7 +32,7 @@ public class ProxyController(
     [HttpPost("bootstrap")]
     public async Task<IActionResult> Bootstrap(JsonElement jsonElement)
     {
-        if (ApiKey != _agentOptions.ApiKey)
+        if (ApiKey != _options.ApiKey)
         {
             return Unauthorized();
         }
@@ -53,7 +53,7 @@ public class ProxyController(
     [HttpGet("backup")]
     public async Task<IActionResult> Backup()
     {
-        if (ApiKey != _agentOptions.ApiKey)
+        if (ApiKey != _options.ApiKey)
         {
             return Unauthorized();
         }
