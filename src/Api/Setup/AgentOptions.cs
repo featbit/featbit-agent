@@ -29,26 +29,30 @@ public class AgentOptionsValidation : IValidateOptions<AgentOptions>
             );
         }
 
-        if (mode == AgentMode.Auto && string.IsNullOrWhiteSpace(options.AgentId))
-        {
-            return ValidateOptionsResult.Fail("AgentId is required when the mode is set to 'Auto'.");
-        }
-
         var apiKey = options.ApiKey;
         if (string.IsNullOrWhiteSpace(apiKey))
         {
             return ValidateOptionsResult.Fail("ApiKey is not configured.");
         }
 
+        var agentId = options.AgentId;
         var streamingUri = options.StreamingUri;
-        if (string.IsNullOrWhiteSpace(streamingUri))
+        if (mode == AgentMode.Auto)
         {
-            return ValidateOptionsResult.Fail("StreamingUri is not configured.");
-        }
+            if (string.IsNullOrWhiteSpace(agentId))
+            {
+                return ValidateOptionsResult.Fail("AgentId is required when the mode is set to 'Auto'.");
+            }
 
-        if (!Uri.TryCreate(streamingUri, UriKind.Absolute, out _))
-        {
-            return ValidateOptionsResult.Fail("StreamingUri is not a valid absolute URI.");
+            if (string.IsNullOrWhiteSpace(streamingUri))
+            {
+                return ValidateOptionsResult.Fail("StreamingUri is required when the mode is set to 'Auto'.");
+            }
+
+            if (!Uri.TryCreate(streamingUri, UriKind.Absolute, out _))
+            {
+                return ValidateOptionsResult.Fail("StreamingUri is not a valid absolute URI.");
+            }
         }
 
         var eventUri = options.EventUri;
