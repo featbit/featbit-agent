@@ -47,7 +47,13 @@ public class ProxyController(
             await dataChangeNotifier.NotifyAsync(envId);
         }
 
-        return Ok();
+        var storeStatus = new
+        {
+            serves = agentStore.Serves,
+            dataVersion = agentStore.Version
+        };
+
+        return Ok(storeStatus);
     }
 
     [HttpGet("backup")]
