@@ -2,7 +2,7 @@ using Api.Shared;
 
 namespace Api.DataSynchronizer;
 
-internal sealed class NullDataSynchronizer : IDataSynchronizer
+internal sealed class NoopDataSynchronizer : IDataSynchronizer
 {
     public DataSynchronizerStatus Status { get; private set; }
     public DateTime? LastSyncAt { get; private set; }

@@ -2,7 +2,6 @@ using Api.DataSynchronizer;
 using Api.Services;
 using Api.Shared;
 using Api.Store;
-using Microsoft.Extensions.Options;
 
 namespace Api.Setup;
 
@@ -10,20 +9,12 @@ public class StatusSyncHostedService(
     IStatusProvider statusProvider,
     IDataSynchronizer dataSynchronizer,
     IAgentStore agentStore,
-    IOptions<AgentOptions> agentOptions,
     ILogger<StatusSyncHostedService> logger) : IHostedService
 {
     private readonly TimeSpan _syncInterval = TimeSpan.FromMinutes(1);
-    private readonly AgentOptions _agentOptions = agentOptions.Value;
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        if (_agentOptions.Mode != AgentMode.Auto)
-        {
-            logger.LogInformation("Agent is not in auto mode, skipping status sync.");
-            return Task.CompletedTask;
-        }
-
         var agentId = agentStore.AgentId;
         if (string.IsNullOrWhiteSpace(agentId))
         {

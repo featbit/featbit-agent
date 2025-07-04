@@ -39,10 +39,6 @@ public static class ServicesRegister
         // services
         services.AddTransient<IStatusProvider, StatusProvider>();
 
-        // agent registration
-        services.AddSingleton<IAgentRegistrar, AgentRegistrar>();
-        services.AddHostedService<AgentRegistrationHostedService>();
-
         // streaming
         services.AddStreamingCore(x =>
         {
@@ -56,13 +52,26 @@ public static class ServicesRegister
 
         services.AddSingleton<IMessageProducer, NoneMessageProducer>();
 
-        // data synchronizer
-        services.AddSingleton<IDataSynchronizer, WebSocketDataSynchronizer>();
-        services.AddHostedService<DataSynchronizerHostedService>();
-        services.AddTransient<IDataSyncMessageHandler, DataSyncMessageHandler>();
+        // auto registration and data synchronizer for auto agent mode
+        if (builder.Configuration.IsAutoMode())
+        {
+            // agent registration
+            services.AddSingleton<IAgentRegistrar, AgentRegistrar>();
+            services.AddHostedService<AgentRegistrationHostedService>();
 
-        // status sync
-        services.AddHostedService<StatusSyncHostedService>();
+            // data synchronizer
+            services.AddSingleton<IDataSynchronizer, WebSocketDataSynchronizer>();
+            services.AddHostedService<DataSynchronizerHostedService>();
+            services.AddTransient<IDataSyncMessageHandler, DataSyncMessageHandler>();
+
+            // status sync
+            services.AddHostedService<StatusSyncHostedService>();
+        }
+        else
+        {
+            // noop data synchronizer for non-auto mode
+            services.AddSingleton<IDataSynchronizer, NoopDataSynchronizer>();
+        }
 
         // data change notifier
         services.AddTransient<IDataChangeNotifier, DataChangeNotifier>();
