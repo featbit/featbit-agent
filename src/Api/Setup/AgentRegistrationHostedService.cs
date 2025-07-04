@@ -22,11 +22,10 @@ public class AgentRegistrationHostedService(
         var agentId = await registrar.RegisterAsync(options.Value.AgentId, cancellationToken);
         if (string.IsNullOrWhiteSpace(agentId))
         {
-            logger.LogWarning(
+            throw new Exception(
                 "Agent registration failed. " +
                 "This is usually due to an invalid API key or network connectivity issues to the streaming server."
             );
-            return;
         }
 
         await agentStore.SaveAgentIdAsync(agentId);
