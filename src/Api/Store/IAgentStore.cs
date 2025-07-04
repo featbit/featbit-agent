@@ -2,7 +2,15 @@ namespace Api.Store;
 
 public interface IAgentStore
 {
+    bool Initialized { get; }
+
     long Version { get; }
+
+    string Serves { get; }
+
+    string AgentId { get; }
+
+    ValueTask SaveAgentIdAsync(string agentId);
 
     ValueTask PopulateAsync(DataSet dataSet);
 

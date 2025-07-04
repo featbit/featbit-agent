@@ -22,7 +22,7 @@ public static class ServicesRegister
 
         // health check dependencies
         services.AddHealthChecks()
-            .AddCheck<DataSynchronizerHealthCheck>("DataSynchronizer");
+            .AddCheck<DefaultHealthCheck>("Default Health Check");
 
         // cors
         services.AddCors(options => options.AddDefaultPolicy(policyBuilder =>
@@ -35,6 +35,9 @@ public static class ServicesRegister
 
         // add httpclient
         services.AddHttpClient();
+
+        // services
+        services.AddTransient<IStatusProvider, StatusProvider>();
 
         // streaming
         services.AddStreamingCore(x =>
@@ -49,10 +52,26 @@ public static class ServicesRegister
 
         services.AddSingleton<IMessageProducer, NoneMessageProducer>();
 
-        // data synchronizer
-        services.AddSingleton<IDataSynchronizer, WebSocketDataSynchronizer>();
-        services.AddHostedService<DataSynchronizerHostedService>();
-        services.AddTransient<IDataSyncMessageHandler, DataSyncMessageHandler>();
+        // auto registration and data synchronizer for auto agent mode
+        if (builder.Configuration.IsAutoMode())
+        {
+            // agent registration
+            services.AddSingleton<IAgentRegistrar, AgentRegistrar>();
+            services.AddHostedService<AgentRegistrationHostedService>();
+
+            // data synchronizer
+            services.AddSingleton<IDataSynchronizer, WebSocketDataSynchronizer>();
+            services.AddHostedService<DataSynchronizerHostedService>();
+            services.AddTransient<IDataSyncMessageHandler, DataSyncMessageHandler>();
+
+            // status sync
+            services.AddHostedService<StatusSyncHostedService>();
+        }
+        else
+        {
+            // noop data synchronizer for non-auto mode
+            services.AddSingleton<IDataSynchronizer, NoopDataSynchronizer>();
+        }
 
         // data change notifier
         services.AddTransient<IDataChangeNotifier, DataChangeNotifier>();

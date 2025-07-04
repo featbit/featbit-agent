@@ -3,8 +3,11 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using Api.Setup;
+using Api.Shared;
 using Api.Transport;
+using Domain.Shared;
 using Microsoft.Extensions.Options;
+using Streaming.Protocol;
 
 namespace Api.DataSynchronizer
 {
@@ -140,6 +143,22 @@ namespace Api.DataSynchronizer
             await _webSocket.CloseAsync(cancellation);
 
             Status = DataSynchronizerStatus.Stopped;
+        }
+
+        public async Task SyncStatusAsync(StatusSyncPayload payload, CancellationToken cancellation = default)
+        {
+            var message = new
+            {
+                messageType = MessageTypes.RpAgentStatus,
+                data = new
+                {
+                    agentId = payload.AgentId,
+                    status = JsonSerializer.Serialize(payload.Status, ReusableJsonSerializerOptions.Web)
+                }
+            };
+
+            var bytes = JsonSerializer.SerializeToUtf8Bytes(message, ReusableJsonSerializerOptions.Web);
+            await _webSocket.SendAsync(bytes, cancellation);
         }
     }
 }

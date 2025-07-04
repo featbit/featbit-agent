@@ -1,4 +1,4 @@
-namespace Api.Models;
+namespace Api.Shared;
 
 public class Record
 {

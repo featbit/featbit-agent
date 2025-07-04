@@ -1,5 +1,5 @@
+using Api.Shared;
 using Api.Store;
-using Api.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
@@ -14,7 +14,6 @@ public class FbDbContext : DbContext
     public FbDbContext(DbContextOptions<FbDbContext> builderOptions) : base(builderOptions)
     {
     }
-
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {

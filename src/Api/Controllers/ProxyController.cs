@@ -1,47 +1,38 @@
 using Api.Store;
-using Api.Models;
 using System.Text.Json;
-using Api.DataSynchronizer;
+using Api.Messaging;
+using Api.Services;
+using Api.Setup;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace Api.Controllers;
 
 public class ProxyController(
     IAgentStore agentStore,
-    IDataSynchronizer dataSynchronizer,
-    IConfiguration configuration,
-    ILogger<ProxyController> logger)
+    IStatusProvider statusProvider,
+    IDataChangeNotifier dataChangeNotifier,
+    IOptions<AgentOptions> options)
     : ApiControllerBase
 {
+    private readonly AgentOptions _options = options.Value;
+
     [HttpGet("status")]
     public IActionResult GetStatus()
     {
-        if (ApiKey != configuration["ApiKey"])
+        if (ApiKey != _options.ApiKey)
         {
             return Unauthorized();
         }
 
-        try
-        {
-            var state = new
-            {
-                data_version = agentStore.Version,
-                data_last_synced_at = dataSynchronizer.LastSyncAt
-            };
-
-            return Ok(Status.Healthy(state));
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "An exception occurred while checking the agent status.");
-            return Ok(Status.Unhealthy());
-        }
+        var status = statusProvider.GetStatus();
+        return Ok(status);
     }
 
     [HttpPost("bootstrap")]
     public async Task<IActionResult> Bootstrap(JsonElement jsonElement)
     {
-        if (ApiKey != configuration["ApiKey"])
+        if (ApiKey != _options.ApiKey)
         {
             return Unauthorized();
         }
@@ -49,13 +40,26 @@ public class ProxyController(
         var dataSet = DataSet.FromJson(jsonElement);
         await agentStore.PopulateAsync(dataSet);
 
-        return Ok();
+        // Notify all environments about the data change
+        var envIds = dataSet.Items.Select(x => x.EnvId);
+        foreach (var envId in envIds)
+        {
+            await dataChangeNotifier.NotifyAsync(envId);
+        }
+
+        var storeStatus = new
+        {
+            serves = agentStore.Serves,
+            dataVersion = agentStore.Version
+        };
+
+        return Ok(storeStatus);
     }
 
     [HttpGet("backup")]
     public async Task<IActionResult> Backup()
     {
-        if (ApiKey != configuration["ApiKey"])
+        if (ApiKey != _options.ApiKey)
         {
             return Unauthorized();
         }
