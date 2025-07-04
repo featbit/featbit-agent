@@ -94,8 +94,8 @@ public class AgentRegistrar(
         {
             var httpClient = httpClientFactory.CreateClient();
             httpClient.BaseAddress = new Uri(_options.StreamingUri
-                .Replace("ws://:", "http://:")
-                .Replace("wss://:", "https://:")
+                .Replace("ws://", "http://")
+                .Replace("wss://", "https://")
             );
             httpClient.DefaultRequestHeaders.Add(HeaderNames.Authorization, _options.ApiKey);
 
