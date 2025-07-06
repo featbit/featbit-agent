@@ -27,6 +27,7 @@ You may consider setting up the FeatBit Agent in the following scenarios:
 ## Get Started
 
 > **Note**
+> 
 > Before getting started, you should have a good understanding of what
 > a [relay proxy](https://docs.featbit.co/relay-proxy/relay-proxy) is.
 
