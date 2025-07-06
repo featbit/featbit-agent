@@ -31,3 +31,32 @@ If you need to build and reference this package locally, follow these steps:
 
 Once you have completed these steps, you can update the `FeatBit.EvaluationServer.Streaming` package version in the
 FeatBit Agent project to use the locally built package.
+
+## Multi-platform builds
+
+```bash
+# Build for multiple architectures
+docker buildx build --platform linux/amd64,linux/arm64 -t featbit-agent:latest .
+
+# Push to registry
+docker buildx build --platform linux/amd64,linux/arm64 -t your-registry/featbit-agent:latest --push .
+```
+
+### Debugging Commands
+
+```bash
+# Check container status
+docker ps
+
+# View application logs
+docker logs -f featbit-agent
+
+# Execute commands inside container
+docker exec -it featbit-agent sh
+
+# Check health status
+docker exec featbit-agent curl http://localhost:6100/health/readiness
+
+# Inspect container configuration
+docker inspect featbit-agent
+```

@@ -6,14 +6,14 @@ updates to connected downstream SDKs.
 
 Rather than every client/server connecting directly to the FeatBit platform and streaming changes, they will connect
 directly to your installed agent to receive any flag updates. The agent can support connecting to multiple environments
-across different projects for your account, making it a 1:1 replacement for a direct connection.
+across different projects for your organization, making it a 1:1 replacement for a direct connection.
 
 ## Use Cases
 
 You may consider setting up the FeatBit Agent in the following scenarios:
 
 - **Air-gapped environments**: You may be required to operate in environments without internet connectivity. In this
-  situation, running the FeatBit Agent in offline mode provides the capabilities of FeatBit without using external
+  situation, running the FeatBit Agent in `manual` mode provides the capabilities of FeatBit without using external
   services.
 - **Reducing outbound connections**: With the default configuration, each SDK instance you run will reach out to
   the FeatBit to fetch all the initial flag data, then maintain an outbound streaming connection to receive any
@@ -24,158 +24,95 @@ You may consider setting up the FeatBit Agent in the following scenarios:
   overcome this limitation. Since the agent operates locally, all user information will remain within your customers'
   environments.
 
-## Installation
+## Get Started
 
 > **Note**
-> Before diving into the FeatBit Agent installation, you should have a good understanding of what
+> Before getting started, you should have a good understanding of what
 > a [relay proxy](https://docs.featbit.co/relay-proxy/relay-proxy) is.
 
-### Download
+The easiest way to get started with the FeatBit Agent is using Docker:
 
-To begin, download the FeatBit Agent from the [GitHub releases](https://github.com/featbit/featbit-agent/releases) page
-to your hosting server.
+#### Use Docker Compose
 
-```bash
-# Choose your desired version, here we use linux-x64 for example
-wget https://github.com/featbit/featbit-agent/releases/download/v1.0.1/featbit_agent_linux-x64_1.0.1.tar.gz
-```
+1. **Clone or download the repository:**
+   ```bash
+   git clone https://github.com/featbit/featbit-agent.git
+   cd featbit-agent
+   ```
 
-Once the download is complete, perform a quick test to verify that Featbit Agent can run on your machine.
+2. **Configure the agent:**
+   Edit the environment variables in `docker-compose.yml`:
+   ```yaml
+   environment:
+     - AgentId=your-unique-agent-id
+     - StreamingUri=ws://your-els-server
+     - ApiKey=your-api-key
+     - EventUri=http://your-event-server
+   ```
 
-```bash
-tar -xvzf featbit_agent_linux-x64_1.0.1.tar.gz --one-top-level=featbit-agent
-cd featbit-agent
+3. **Start the agent:**
+   ```bash
+   docker-compose up -d
+   ```
 
-# Run agent from command line
-# If the Api file is not executable, Use 'chmod +x Api' to allow execution of the executable file
-./Api --urls "http://localhost:6100"
-```
+4. **Verify it's running:**
+   ```bash
+   curl http://localhost:6100/health/liveness
+   ```
 
-If everything is fine, you should see the following output:
-
-```log
-...
-info: Microsoft.Hosting.Lifetime[14]
-      Now listening on: http://localhost:6100
-info: Microsoft.Hosting.Lifetime[0]
-      Application started. Press Ctrl+C to shut down.
-info: Microsoft.Hosting.Lifetime[0]
-      Hosting environment: Production
-info: Microsoft.Hosting.Lifetime[0]
-      Content root path: /home/ubuntu/featbit-agent/
-```
-
-### Run As A Service (Using Systemd on Linux)
-
-We need to set up a process manager that starts the agent when requests arrive and restarts the agent after it
-crashes or the server reboots. Here we use [systemd](https://systemd.io/) for example.
-
-#### Create the service file
-
-Create the service definition file using the following command:
+#### Using Docker directly
 
 ```bash
-sed "s,EXTRACTION_FOLDER,$PWD," featbit-agent.service.template > featbit-agent.service
-sudo mv featbit-agent.service /etc/systemd/system/featbit-agent.service
+# Run the container
+docker run -d \
+  --name featbit-agent \
+  -p 6100:6100 \
+  -e Mode=auto \
+  -e AgentId=docker-agent-001 \
+  -e StreamingUri=ws://your-els-server \
+  -e ApiKey=your-api-key \
+  -e EventUri=http://your-event-server \
+  featbit/featbit-agent
 ```
 
-#### Configure the agent
+## Environment Variables
 
-Open the service file for editing
+| Variable        | Description                                                                                          | Default         |
+|-----------------|------------------------------------------------------------------------------------------------------|-----------------|
+| Mode            | Operation mode of the agent (`auto` or `manual`)                                                     | `auto`          |
+| AgentId         | Unique identifier for the agent, required in `auto` mode for agent auto registration                 | ''              |
+| StreamingUri    | Evaluation server streaming uri, for example: `ws://your-els-server`                                 | ''              |
+| ApiKey          | API Key of the relay proxy                                                                           | ''              |
+| EventUri        | Event server uri, usually the same as evaluation server uri, for example: `http://your-event-server` | ''              |
+| ForwardEvents   | Whether forward insights data (flag evaluation event, end users, etc) to the FeatBit server          | `true`          |
+| ASPNETCORE_URLS | URLs the agent listens on                                                                            | `http://+:6100` |
 
-```bash
-sudo vi /etc/systemd/system/featbit-agent.service
-```
+## Health Checks
 
-Inside the file, locate the following configuration options and set them according to your requirements:
+you have a few options to check the app's health status
 
-- **(Mandatory)** User: Configure the user for running the service.
-    ```ini
-    # Configure the user for running the service
-    # An example value: ubuntu
-    User=your-user-name
-    ```
+### Liveness
 
-- **(Mandatory)** ApiKey: Get an agent key [here](https://docs.featbit.co/relay-proxy/relay-proxy#create-a-relay-proxy-configuration)
-  ```ini
-  # Check the documentation here to obtain your agent key: https://docs.featbit.co/relay-proxy/relay-proxy#create-a-relay-proxy-configuration
-  # An example value: rp-MzM3OTE5MTk0Njg2MQcuGyUHGX90WZvs9RbpZgug
-  Environment=ApiKey=your-api-key
-  ```
+Run `curl your-agent-host/health/liveness` to verify that the agent has started and is running.
+This only exercises the most basic requirements of the agent itself i.e. can they respond to an HTTP request.
 
-- (Optional) ASPNETCORE_URLS: If you want to change the URLs that the FeatBit Agent listen on (defaults to http://*:6100) for request, you need to
-set the below configuration:
+### Readiness
 
-  ```ini
-  # Configure the URLs that the FeatBit Agent should listen on for requests.
-  # Defaults to http://*:6100
-  # An example value: http://*:5000;http://localhost:5001;https://hostname:5002
-  # For more details, please check the documentation at: https://learn.microsoft.com/en-us/aspnet/core/fundamentals/host/web-host?view=aspnetcore-6.0#server-urls
-  Environment=ASPNETCORE_URLS=http://*:6100
-  ```
+Run `curl your-agent-host/health/readiness` to verify if the agent is working correctly and ready to serve streaming
+requests.
 
-Save the file after making the necessary configurations.
+- for `auto` mode, it checks if the agent's data synchronizer is stable and has fetched the initial data.
+- for `manual` mode, it checks if the agent has been bootstrapped manually.
 
-#### Start the service and check its status
+## Troubleshooting
 
-Now, start the agent service and check its status:
+### Common Issues
 
-```bash
-sudo systemctl start featbit-agent.service
-sudo systemctl status featbit-agent.service
-```
+1. **Connection refused to FeatBit server:**
+    - Verify network connectivity between the FeatBit Agent and the ELS
+    - Ensure the ELS is running and accessible
+    - Check if the `StreamingUri` and `ApiKey` are correctly set
 
-If everything is fine, you should see the following output:
-
-```log
-● featbit-agent.service - The FeatBit Agent Service
-     Loaded: loaded (/etc/systemd/system/featbit-agent.service; disabled; vendor preset: enabled)
-     Active: active (running) since Thu 2023-06-15 03:35:26 UTC; 1h 40min ago
-   Main PID: 2321 (Api)
-      Tasks: 14 (limit: 1141)
-     Memory: 31.9M
-        CPU: 2.814s
-     CGroup: /system.slice/featbit-agent.service
-             └─2321 /home/ubuntu/featbit-agent/Api
-
-Jun 15 03:35:26 ip-172-31-37-23 systemd[1]: Started The FeatBit Agent Service.
-Jun 15 03:35:28 ip-172-31-37-23 featbit-agent[2321]: info: Microsoft.Hosting.Lifetime[14]
-Jun 15 03:35:28 ip-172-31-37-23 featbit-agent[2321]:       Now listening on: http://localhost:6100
-Jun 15 03:35:28 ip-172-31-37-23 featbit-agent[2321]: info: Microsoft.Hosting.Lifetime[0]
-Jun 15 03:35:28 ip-172-31-37-23 featbit-agent[2321]:       Application started. Press Ctrl+C to shut down.
-Jun 15 03:35:28 ip-172-31-37-23 featbit-agent[2321]: info: Microsoft.Hosting.Lifetime[0]
-Jun 15 03:35:28 ip-172-31-37-23 featbit-agent[2321]:       Hosting environment: Production
-Jun 15 03:35:28 ip-172-31-37-23 featbit-agent[2321]: info: Microsoft.Hosting.Lifetime[0]
-Jun 15 03:35:28 ip-172-31-37-23 featbit-agent[2321]:       Content root path: /home/ubuntu/featbit-agent/
-```
-
-#### Enable automatic startup
-
-To enable automatic startup of the agent when the OS starts, run the following command:
-
-```bash
-sudo systemctl enable featbit-agent.service
-```
-
-### View logs
-
-Since the FeatBit Agent is managed by systemd, all events and processes are logged to a centralized
-journal. To view the `featbit-agent.service`-specific logs, use the following command:
-
-```bash
-sudo journalctl -fu featbit-agent.service
-```
-
-For further filtering, time options such as `--since today`, `--until 1 hour ago`, or a combination of these can reduce the
-number of entries returned.
-
-```bash
-sudo journalctl -fu featbit-agent.service --since "2023-06-15" --until "2023-06-15 12:00" 
-```
-
-## Health Check
-You can run the following command to check if the agent is healthy:
-
-```bash
-curl http://localhost:6100/health/liveness; echo
-```
+2. **Health check failures:**
+    - Test readiness endpoints manually: `curl {your-agent-host}/health/readiness`
+    - Check application logs: `docker logs featbit-agent`
