@@ -11,7 +11,7 @@ to your hosting server.
 wget https://github.com/featbit/featbit-agent/releases/download/v1.0.1/featbit_agent_linux-x64_1.0.1.tar.gz
 ```
 
-Once the download is complete, perform a quick test to verify that Featbit Agent can run on your machine.
+Once the download is complete, perform a quick test to verify that FeatBit Agent can run on your machine.
 
 ```bash
 tar -xvzf featbit_agent_linux-x64_1.0.1.tar.gz --one-top-level=featbit-agent
