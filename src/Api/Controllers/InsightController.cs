@@ -8,8 +8,8 @@ namespace Api.Controllers;
 
 public class InsightController : ApiControllerBase
 {
-    private readonly Uri _eventUri;
     private readonly bool _forwardEvents;
+    private readonly Uri? _eventUri;
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<InsightController> _logger;
@@ -21,10 +21,12 @@ public class InsightController : ApiControllerBase
     {
         var optionsValue = options.Value;
 
-        var eventUri = optionsValue.EventUri?.TrimEnd('/');
-
         _forwardEvents = optionsValue.ForwardEvents;
-        _eventUri = new Uri($"{eventUri}/api/public/insight/track");
+        if (_forwardEvents)
+        {
+            var eventUri = optionsValue.EventUri?.TrimEnd('/');
+            _eventUri = new Uri($"{eventUri}/api/public/insight/track");
+        }
 
         _httpClientFactory = httpClientFactory;
         _logger = logger;
