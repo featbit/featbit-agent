@@ -29,8 +29,7 @@ You may consider setting up the FeatBit Agent in the following scenarios:
 
 ## Quick Start
 
-> **Note**
->
+> [!NOTE]
 > Before getting started, you should have a good understanding of what
 > a [relay proxy](https://docs.featbit.co/relay-proxy/relay-proxy) is.
 
@@ -48,7 +47,7 @@ curl -o docker-compose.yml https://raw.githubusercontent.com/featbit/featbit/mai
 Edit the environment variables in `docker-compose.yml` according to your FeatBit setup:
 
 | Variable        | Description                                                                                          | Default                                     |
-| --------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+|-----------------|------------------------------------------------------------------------------------------------------|---------------------------------------------|
 | Mode            | Operation mode of the agent (`auto` or `manual`)                                                     | `auto`                                      |
 | AgentId         | Unique identifier for the agent.                                                                     | '' (required if in `auto` mode)             |
 | StreamingUri    | Evaluation server streaming uri, for example: `ws://your-els-server`                                 | '' (required if in `auto` mode)             |
