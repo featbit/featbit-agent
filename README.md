@@ -36,24 +36,26 @@ You may consider setting up the FeatBit Agent in the following scenarios:
 
 The easiest way to get started with is using Docker:
 
-### 1. Get the yaml file
+### 1. Get the docker-compose file
 
 ```bash
-curl -o featbit-agent/docker-compose.yml https://raw.githubusercontent.com/featbit/featbit/main/docker/docker-compose.yml
-cd featbit-agent
+mkdir featbit-agent && cd featbit-agent
+curl -o docker-compose.yml https://raw.githubusercontent.com/featbit/featbit/main/docker/docker-compose.yml
 ```
 
 ### 2. Configure the agent
 
-Edit the environment variables in `docker-compose.yml`:
+Edit the environment variables in `docker-compose.yml` according to your FeatBit setup:
 
-```yaml
-environment:
-  - AgentId=your-unique-agent-id
-  - StreamingUri=ws://your-els-server
-  - ApiKey=your-api-key
-  - EventUri=http://your-event-server
-```
+| Variable        | Description                                                                                          | Default                                     |
+| --------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| Mode            | Operation mode of the agent (`auto` or `manual`)                                                     | `auto`                                      |
+| AgentId         | Unique identifier for the agent.                                                                     | '' (required if in `auto` mode)             |
+| StreamingUri    | Evaluation server streaming uri, for example: `ws://your-els-server`                                 | '' (required if in `auto` mode)             |
+| ApiKey          | API Key of the relay proxy                                                                           | ''                                          |
+| ForwardEvents   | Whether forward insights data (flag evaluation result, end users, etc) to the FeatBit server         | `true`                                      |
+| EventUri        | Event server uri, usually the same as evaluation server uri, for example: `http://your-event-server` | '' (required if `ForwardEvents` is enabled) |
+| ASPNETCORE_URLS | URLs the agent listens on                                                                            | `http://+:6100`                             |
 
 ### 3. Start the agent and verify it's running
 
@@ -75,18 +77,6 @@ docker run -d \
   -e EventUri=http://your-event-server \
   featbit/featbit-agent
 ```
-
-## Environment Variables
-
-| Variable        | Description                                                                                          | Default                                     |
-|-----------------|------------------------------------------------------------------------------------------------------|---------------------------------------------|
-| Mode            | Operation mode of the agent (`auto` or `manual`)                                                     | `auto`                                      |
-| AgentId         | Unique identifier for the agent.                                                                     | '' (required in `auto` mode)                |
-| StreamingUri    | Evaluation server streaming uri, for example: `ws://your-els-server`                                 | '' (required in `auto` mode)                |
-| ApiKey          | API Key of the relay proxy                                                                           | ''                                          |
-| ForwardEvents   | Whether forward insights data (flag evaluation result, end users, etc) to the FeatBit server         | `true`                                      |
-| EventUri        | Event server uri, usually the same as evaluation server uri, for example: `http://your-event-server` | '' (required if `ForwardEvents` is enabled) |
-| ASPNETCORE_URLS | URLs the agent listens on                                                                            | `http://+:6100`                             |
 
 ## Health Checks
 
