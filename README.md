@@ -105,6 +105,11 @@ This endpoint verifies if the agent is fully operational and ready to serve stre
 > Use the `/health/readiness` endpoint in your orchestration tools (like Kubernetes) to ensure traffic is only routed to
 > fully operational agent instances.
 
+## API Endpoints
+
+The FeatBit Agent provides several API endpoints for manual mode operations and administrative tasks.
+Check the [API documentation](./docs/api.md) for a complete list of available endpoints and their usage.
+
 ### Getting Support
 
 - For troubleshooting, please read [troubleshooting guide](./docs/troubleshooting.md) first.
