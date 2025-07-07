@@ -31,8 +31,6 @@ namespace Api.DataSynchronizer
             _dataSyncMessageHandler = dataSyncMessageHandler;
             _logger = loggerFactory.CreateLogger<WebSocketDataSynchronizer>();
 
-            Status = DataSynchronizerStatus.Starting;
-
             var optionValues = options.Value;
 
             var streamingUri = optionValues.StreamingUri.TrimEnd('/');
@@ -52,8 +50,9 @@ namespace Api.DataSynchronizer
 
         public Task<bool> StartAsync()
         {
-            _ = _webSocket.ConnectAsync();
+            Status = DataSynchronizerStatus.Starting;
 
+            _ = _webSocket.ConnectAsync();
             return _initTcs.Task;
         }
 

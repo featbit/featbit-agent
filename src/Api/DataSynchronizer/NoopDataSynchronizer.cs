@@ -7,19 +7,9 @@ internal sealed class NoopDataSynchronizer : IDataSynchronizer
     public DataSynchronizerStatus Status { get; private set; }
     public DateTime? LastSyncAt { get; private set; }
 
-    public Task<bool> StartAsync()
-    {
-        Status = DataSynchronizerStatus.Stable;
-        LastSyncAt = DateTime.UtcNow;
+    public Task<bool> StartAsync() => Task.FromResult(true);
 
-        return Task.FromResult(true);
-    }
-
-    public Task StopAsync(CancellationToken cancellation)
-    {
-        Status = DataSynchronizerStatus.Stopped;
-        return Task.CompletedTask;
-    }
+    public Task StopAsync(CancellationToken cancellation) => Task.CompletedTask;
 
     public Task SyncStatusAsync(StatusSyncPayload payload, CancellationToken cancellation = default)
         => Task.CompletedTask;
