@@ -1,9 +1,8 @@
 # FeatBit Agent
 
 The FeatBit Agent is a fast and lightweight application designed to **run within your infrastructure**, sitting between
-FeatBit SDKs and the Evaluation Server (ELS). It acts as a read replica of the ELS, handles all SDK connections, fetches
-all of your flag and segment data on startup, caches it in memory, and delivering updates to downstream SDKs in
-real-time.
+FeatBit SDKs and the Evaluation Server (ELS). It acts as a read replica of the ELS, handles all SDK connections, and
+delivers updates to downstream SDKs in real-time.
 
 Rather than every client/server connecting directly to the FeatBit platform and streaming changes, they will connect
 directly to your installed agent to receive any flag updates. The agent can support connecting to multiple environments
@@ -13,8 +12,9 @@ across different projects for your organization, making it a 1:1 replacement for
 
 You may consider setting up the FeatBit Agent in the following scenarios:
 
-- **Performance and Reliability**: The FeatBit Agent can help reduce latency by deploying it closer to the downstream
-  SDKs and can maintain functionality even if the FeatBit platform is unavailable.
+- **Performance and Reliability**: The FeatBit Agent can help reduce latency by deploying closer to your downstream
+  SDKs, enabling faster streaming responses. It serves as a local cache that continues to function even during
+  FeatBit platform outages, ensuring high availability and resilience for your applications.
 - **Air-gapped environments**: You may be required to operate in environments without internet connectivity. In this
   situation, running the FeatBit Agent in `manual` mode provides the capabilities of FeatBit without using external
   services.
@@ -55,7 +55,7 @@ Edit the environment variables in `docker-compose.yml` according to your FeatBit
 | ForwardEvents | Whether forward insights data (flag evaluation result, end users, etc) to the FeatBit server                                                 | `true`  |
 | EventUri      | Required if `ForwardEvents` is `true`. Event server uri, usually the same as evaluation server uri, for example: `http://your-event-server`. | ''      |
 
-### 3. Start the agent and verify it's running
+### 3. Start the agent and verify it is running
 
 ```bash
 docker-compose up -d
