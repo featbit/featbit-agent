@@ -39,7 +39,7 @@ The easiest way to get started with is using Docker:
 
 ```bash
 mkdir featbit-agent && cd featbit-agent
-curl -o docker-compose.yml https://raw.githubusercontent.com/featbit/featbit/main/docker/docker-compose.yml
+curl -o docker-compose.yml https://raw.githubusercontent.com/featbit/featbit-agent/main/docker-compose.yml
 ```
 
 ### 2. Configure the agent
