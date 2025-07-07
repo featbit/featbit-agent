@@ -33,7 +33,7 @@ You may consider setting up the FeatBit Agent in the following scenarios:
 > Before getting started, you should have a good understanding of what
 > a [relay proxy](https://docs.featbit.co/relay-proxy/relay-proxy) is.
 
-The easiest way to get started with is using Docker:
+The easiest way to get started is using Docker:
 
 ### 1. Get the docker-compose file
 
