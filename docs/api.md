@@ -10,16 +10,6 @@ All API endpoints require authentication using an API key. The API key must be i
 Authorization: <your-api-key>
 ```
 
-## Base URL
-
-The default base URL for the API is:
-
-```http
-http://localhost:6100/api/proxy
-```
-
-Replace `localhost:6100` with your agent's actual host and port.
-
 ## Endpoints
 
 ### Get Agent Status
