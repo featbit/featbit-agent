@@ -63,26 +63,10 @@ TestResult.xml
 [Rr]eleasePS/
 dlldata.c
 
-# Published files (not needed in container)
-publish/
-
 # Git files
 .git/
 .gitignore
 .gitattributes
-
-# Docker files
-Dockerfile*
-docker-compose*
-.dockerignore
-
-# Documentation
-*.md
-docs/
-
-# Local configuration that shouldn't be in container
-appsettings.Development.json
-appsettings.Local.json
 
 # Temporary files
 **/*~
