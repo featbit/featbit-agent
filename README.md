@@ -48,12 +48,12 @@ Edit the environment variables in `docker-compose.yml` according to your FeatBit
 
 | Variable      | Description                                                                                                                                   | Default |
 |---------------|-----------------------------------------------------------------------------------------------------------------------------------------------|---------|
-| ApiKey        | API Key of the relay proxy                                                                                                                    | ''      |
+| ApiKey        | API Key of the relay proxy                                                                                                                    | `""`    |
 | Mode          | Operation mode of the agent (`auto` or `manual`)                                                                                              | `auto`  |
-| AgentId       | Unique identifier for the agent. Required when mode is `auto`                                                                                 | ''      |
-| StreamingUri  | Required when mode is `auto`. Evaluation server streaming uri, for example: `ws://your-els-server`                                            | ''      |
+| AgentId       | Unique identifier for the agent. Required when mode is `auto`                                                                                 | `""`    |
+| StreamingUri  | Required when mode is `auto`. Evaluation server streaming uri, for example: `ws://your-els-server`                                            | `""`    |
 | ForwardEvents | Whether forward insights data (flag evaluation result, end users, etc) to the FeatBit server                                                  | `true`  |
-| EventUri      | Required when `ForwardEvents` is `true`. Event server uri, usually the same as evaluation server uri, for example: `http://your-event-server` | ''      |
+| EventUri      | Required when `ForwardEvents` is `true`. Event server uri, usually the same as evaluation server uri, for example: `http://your-event-server` | `""`    |
 
 ### 3. Start the agent and verify it is running
 
@@ -78,30 +78,37 @@ docker run -d \
 
 ## Health Checks
 
-you have a few options to check the app's health status
+The FeatBit Agent provides multiple health check endpoints to monitor its operational status:
 
-### Liveness
+### Liveness Check
 
-Run `curl your-agent-host/health/liveness` to verify that the agent has started and is running.
-This only exercises the most basic requirements of the agent itself i.e. can they respond to an HTTP request.
+```bash
+curl http://your-agent-host:6100/health/liveness
+```
 
-### Readiness
+This endpoint verifies that the agent has started and is running. It performs a basic health check to confirm the agent
+is up and can respond to HTTP requests.
 
-Run `curl your-agent-host/health/readiness` to verify if the agent is working correctly and ready to serve streaming
-requests.
+### Readiness Check
 
-- for `auto` mode, it checks if the agent's data synchronizer is stable and has fetched the initial data.
-- for `manual` mode, it checks if the agent has been bootstrapped manually.
+```bash
+curl http://your-agent-host:6100/health/readiness
+```
 
-## Troubleshooting
+This endpoint verifies if the agent is fully operational and ready to serve streaming requests:
 
-### Common Issues
+- **Auto mode**: Confirms the agent has successfully fetched initial data from the evaluation server and the data
+  synchronizer is in a `stable` state
+- **Manual mode**: Confirms the agent has been properly bootstrapped with configuration data
 
-1. **Connection refused to FeatBit server:**
-    - Verify network connectivity between the FeatBit Agent and the ELS
-    - Ensure the ELS is running and accessible
-    - Check if the `StreamingUri` and `ApiKey` are correctly set
+> [!TIP]
+> Use the `/health/readiness` endpoint in your orchestration tools (like Kubernetes) to ensure traffic is only routed to
+> fully operational agent instances.
 
-2. **Health check failures:**
-    - Test readiness endpoints manually: `curl {your-agent-host}/health/readiness`
-    - Check application logs: `docker logs featbit-agent`
+### Getting Support
+
+- For troubleshooting, please read [troubleshooting guide](./docs/troubleshooting.md) first.
+- If you have a specific question about using this agent, we encourage you
+  to [ask it in our Slack](https://join.slack.com/t/featbit/shared_invite/zt-1ew5e2vbb-x6Apan1xZOaYMnFzqZkGNQ).
+- If you encounter a bug or would like to request a
+  feature, [submit an issue](https://github.com/featbit/featbit-agent/issues/new).
