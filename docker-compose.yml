@@ -8,10 +8,10 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:6100
       # Configure these environment variables according to your FeatBit setup
+      - ApiKey=your-api-key-here
       - Mode=auto
       - AgentId=docker-agent-001
       - StreamingUri=ws://evaluation-server:5100
-      - ApiKey=your-api-key-here
       - ForwardEvents=true
       - EventUri=http://evaluation-server:5100
     networks:

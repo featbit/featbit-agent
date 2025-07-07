@@ -46,15 +46,14 @@ curl -o docker-compose.yml https://raw.githubusercontent.com/featbit/featbit/mai
 
 Edit the environment variables in `docker-compose.yml` according to your FeatBit setup:
 
-| Variable        | Description                                                                                          | Default                                     |
-|-----------------|------------------------------------------------------------------------------------------------------|---------------------------------------------|
-| Mode            | Operation mode of the agent (`auto` or `manual`)                                                     | `auto`                                      |
-| AgentId         | Unique identifier for the agent.                                                                     | '' (required if in `auto` mode)             |
-| StreamingUri    | Evaluation server streaming uri, for example: `ws://your-els-server`                                 | '' (required if in `auto` mode)             |
-| ApiKey          | API Key of the relay proxy                                                                           | ''                                          |
-| ForwardEvents   | Whether forward insights data (flag evaluation result, end users, etc) to the FeatBit server         | `true`                                      |
-| EventUri        | Event server uri, usually the same as evaluation server uri, for example: `http://your-event-server` | '' (required if `ForwardEvents` is enabled) |
-| ASPNETCORE_URLS | URLs the agent listens on                                                                            | `http://+:6100`                             |
+| Variable      | Description                                                                                                                                  | Default |
+|---------------|----------------------------------------------------------------------------------------------------------------------------------------------|---------|
+| ApiKey        | API Key of the relay proxy                                                                                                                   | ''      |
+| Mode          | Operation mode of the agent (`auto` or `manual`)                                                                                             | `auto`  |
+| AgentId       | Required if mode is `auto`. Unique identifier for the agent.                                                                                 | ''      |
+| StreamingUri  | Required if mode is `auto`. Evaluation server streaming uri, for example: `ws://your-els-server`                                             | ''      |
+| ForwardEvents | Whether forward insights data (flag evaluation result, end users, etc) to the FeatBit server                                                 | `true`  |
+| EventUri      | Required if `ForwardEvents` is `true`. Event server uri, usually the same as evaluation server uri, for example: `http://your-event-server`. | ''      |
 
 ### 3. Start the agent and verify it's running
 
