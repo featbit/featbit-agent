@@ -26,7 +26,7 @@ GET /api/proxy/status
 {
   "serves": "p1:dev,p2:dev,p3:dev",
   "dataVersion": 1234567890,
-  "syncState": "stable",
+  "syncState": "Stable",
   "lastSyncedAt": "2023-10-01T12:00:00Z",
   "reportedAt": "2025-07-07T12:00:00Z"
 }
@@ -45,7 +45,7 @@ GET /api/proxy/status
 #### Example
 
 ```bash
-curl -H "ApiKey: your-api-key" \
+curl -H "Authorization: your-api-key" \
   http://localhost:6100/api/proxy/status
 ```
 
@@ -96,7 +96,7 @@ The request body should contain a complete dataset in JSON format:
 ```bash
 curl -X POST \
   -H "Content-Type: application/json" \
-  -H "ApiKey: your-api-key" \
+  -H "Authorization: your-api-key" \
   -d @data.json \
   http://localhost:6100/api/proxy/bootstrap
 ```
@@ -136,7 +136,7 @@ Returns a complete snapshot of all stored data in the same format as the bootstr
 #### Example
 
 ```bash
-curl -H "ApiKey: your-api-key" \
+curl -H "Authorization: your-api-key" \
   http://localhost:6100/api/proxy/backup > backup.json
 ```
 
