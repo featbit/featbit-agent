@@ -13,6 +13,8 @@ across different projects for your organization, making it a 1:1 replacement for
 
 You may consider setting up the FeatBit Agent in the following scenarios:
 
+- **Performance and Reliability**: The FeatBit Agent can help reduce latency by deploying it closer to the downstream
+  SDKs and can maintain functionality even if the FeatBit platform is unavailable.
 - **Air-gapped environments**: You may be required to operate in environments without internet connectivity. In this
   situation, running the FeatBit Agent in `manual` mode provides the capabilities of FeatBit without using external
   services.
@@ -24,8 +26,6 @@ You may consider setting up the FeatBit Agent in the following scenarios:
   establishing third-party connections. By deploying the FeatBit Agent within your customers' own environments, you can
   overcome this limitation. Since the agent operates locally, all user information will remain within your customers'
   environments.
-- **Performance and Reliability**: The FeatBit Agent can help reduce latency by deploying it closer to the downstream
-  SDKs and can maintain functionality even if the FeatBit platform is unavailable.
 
 ## Quick Start
 
@@ -34,12 +34,12 @@ You may consider setting up the FeatBit Agent in the following scenarios:
 > Before getting started, you should have a good understanding of what
 > a [relay proxy](https://docs.featbit.co/relay-proxy/relay-proxy) is.
 
-The easiest way to get started with the FeatBit Agent is using Docker:
+The easiest way to get started with is using Docker:
 
-### 1. Clone or download the repository
+### 1. Get the yaml file
 
 ```bash
-git clone https://github.com/featbit/featbit-agent.git
+curl -o featbit-agent/docker-compose.yml https://raw.githubusercontent.com/featbit/featbit/main/docker/docker-compose.yml
 cd featbit-agent
 ```
 
@@ -61,7 +61,6 @@ environment:
 docker-compose up -d
 curl http://localhost:6100/health/liveness
 ```
-
 
 Additionally, you can also run the agent using a single `docker run` command:
 
