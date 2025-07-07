@@ -1,8 +1,9 @@
 # FeatBit Agent
 
-The FeatBit Agent is a lightweight .NET application designed to **run within your infrastructure**. It handles all
-connections to the FeatBit platform, fetches all of your flag and segment data on startup, caches it, and delivering
-updates to connected downstream SDKs.
+The FeatBit Agent is a fast and lightweight application designed to **run within your infrastructure**, sitting between
+FeatBit SDKs and the Evaluation Server (ELS). It acts as a read replica of the ELS, handles all SDK connections, fetches
+all of your flag and segment data on startup, caches it in memory, and delivering updates to downstream SDKs in
+real-time.
 
 Rather than every client/server connecting directly to the FeatBit platform and streaming changes, they will connect
 directly to your installed agent to receive any flag updates. The agent can support connecting to multiple environments
@@ -23,48 +24,48 @@ You may consider setting up the FeatBit Agent in the following scenarios:
   establishing third-party connections. By deploying the FeatBit Agent within your customers' own environments, you can
   overcome this limitation. Since the agent operates locally, all user information will remain within your customers'
   environments.
+- **Performance and Reliability**: The FeatBit Agent can help reduce latency by deploying it closer to the downstream
+  SDKs and can maintain functionality even if the FeatBit platform is unavailable.
 
-## Get Started
+## Quick Start
 
 > **Note**
-> 
+>
 > Before getting started, you should have a good understanding of what
 > a [relay proxy](https://docs.featbit.co/relay-proxy/relay-proxy) is.
 
 The easiest way to get started with the FeatBit Agent is using Docker:
 
-#### Use Docker Compose
-
-1. **Clone or download the repository:**
-   ```bash
-   git clone https://github.com/featbit/featbit-agent.git
-   cd featbit-agent
-   ```
-
-2. **Configure the agent:**
-   Edit the environment variables in `docker-compose.yml`:
-   ```yaml
-   environment:
-     - AgentId=your-unique-agent-id
-     - StreamingUri=ws://your-els-server
-     - ApiKey=your-api-key
-     - EventUri=http://your-event-server
-   ```
-
-3. **Start the agent:**
-   ```bash
-   docker-compose up -d
-   ```
-
-4. **Verify it's running:**
-   ```bash
-   curl http://localhost:6100/health/liveness
-   ```
-
-#### Using Docker directly
+### 1. Clone or download the repository
 
 ```bash
-# Run the container
+git clone https://github.com/featbit/featbit-agent.git
+cd featbit-agent
+```
+
+### 2. Configure the agent
+
+Edit the environment variables in `docker-compose.yml`:
+
+```yaml
+environment:
+  - AgentId=your-unique-agent-id
+  - StreamingUri=ws://your-els-server
+  - ApiKey=your-api-key
+  - EventUri=http://your-event-server
+```
+
+### 3. Start the agent and verify it's running
+
+```bash
+docker-compose up -d
+curl http://localhost:6100/health/liveness
+```
+
+
+Additionally, you can also run the agent using a single `docker run` command:
+
+```bash
 docker run -d \
   --name featbit-agent \
   -p 6100:6100 \
@@ -78,15 +79,15 @@ docker run -d \
 
 ## Environment Variables
 
-| Variable        | Description                                                                                          | Default         |
-|-----------------|------------------------------------------------------------------------------------------------------|-----------------|
-| Mode            | Operation mode of the agent (`auto` or `manual`)                                                     | `auto`          |
-| AgentId         | Unique identifier for the agent, required in `auto` mode for agent auto registration                 | ''              |
-| StreamingUri    | Evaluation server streaming uri, for example: `ws://your-els-server`                                 | ''              |
-| ApiKey          | API Key of the relay proxy                                                                           | ''              |
-| EventUri        | Event server uri, usually the same as evaluation server uri, for example: `http://your-event-server` | ''              |
-| ForwardEvents   | Whether forward insights data (flag evaluation event, end users, etc) to the FeatBit server          | `true`          |
-| ASPNETCORE_URLS | URLs the agent listens on                                                                            | `http://+:6100` |
+| Variable        | Description                                                                                          | Default                                     |
+|-----------------|------------------------------------------------------------------------------------------------------|---------------------------------------------|
+| Mode            | Operation mode of the agent (`auto` or `manual`)                                                     | `auto`                                      |
+| AgentId         | Unique identifier for the agent.                                                                     | '' (required in `auto` mode)                |
+| StreamingUri    | Evaluation server streaming uri, for example: `ws://your-els-server`                                 | '' (required in `auto` mode)                |
+| ApiKey          | API Key of the relay proxy                                                                           | ''                                          |
+| ForwardEvents   | Whether forward insights data (flag evaluation result, end users, etc) to the FeatBit server         | `true`                                      |
+| EventUri        | Event server uri, usually the same as evaluation server uri, for example: `http://your-event-server` | '' (required if `ForwardEvents` is enabled) |
+| ASPNETCORE_URLS | URLs the agent listens on                                                                            | `http://+:6100`                             |
 
 ## Health Checks
 
