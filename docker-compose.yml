@@ -1,0 +1,26 @@
+services:
+  featbit-agent:
+    image: featbit/featbit-agent:latest
+    container_name: featbit-agent
+    ports:
+      - "6100:6100"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:6100
+      # Configure these environment variables according to your FeatBit setup
+      - ApiKey=your-api-key-here
+      - Mode=auto
+      - AgentId=docker-agent-001
+      - StreamingUri=ws://evaluation-server:5100
+      - ForwardEvents=true
+      - EventUri=http://evaluation-server:5100
+    networks:
+      - featbit-network
+
+networks:
+  featbit-network:
+    name: featbit-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.10.0.0/16
