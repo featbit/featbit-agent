@@ -3,7 +3,12 @@ namespace Api.DataSynchronizer;
 public enum DataSynchronizerStatus
 {
     /// <summary>
-    /// The initial state of the synchronizer.
+    /// The initial state of the data synchronizer.
+    /// </summary> 
+    None,
+
+    /// <summary>
+    /// Indicates that the synchronizer is currently starting up and has not yet received any data.
     /// </summary>
     /// <remarks>
     /// If it encounters an error that requires it to retry initialization, the state will remain at
