@@ -8,7 +8,6 @@
 
     <ItemGroup>
         <PackageReference Include="FeatBit.EvaluationServer.Streaming" Version="5.0.6-local.6" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.16" />
     </ItemGroup>
 
     <PropertyGroup>
