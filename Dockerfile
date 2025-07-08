@@ -12,14 +12,14 @@ RUN dotnet restore "src/Api/Api.csproj"
 
 # Copy the entire source code
 COPY . .
-WORKDIR "/app/src/Api"
+WORKDIR /src/Api
 
 # Build the application
-RUN dotnet build "Api.csproj" -c Release -o /app/build
+RUN dotnet build "Api.csproj" --no-restore -c Release -o /app/build
 
 # Publish the application
 FROM build AS publish
-RUN dotnet publish "Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "Api.csproj" --no-restore -c Release -o /app/publish /p:UseAppHost=false
 
 # Final stage - create the runtime image
 FROM base AS final

@@ -7,12 +7,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="FeatBit.EvaluationServer.Streaming" Version="5.0.6-local.6" />
+        <PackageReference Include="FeatBit.EvaluationServer.Streaming" Version="5.1.0-preview" />
     </ItemGroup>
-
-    <PropertyGroup>
-        <PublishSingleFile>true</PublishSingleFile>
-    </PropertyGroup>
 
     <ItemGroup>
         <None Update="featbit-agent.service.template" CopyToOutputDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
