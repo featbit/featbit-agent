@@ -85,7 +85,15 @@ public class AgentRegistrar(
                 i + 1, _maxAttempts, error, _retryDelay.TotalSeconds
             );
 
-            await Task.Delay(_retryDelay, cts.Token);
+            try
+            {
+                await Task.Delay(_retryDelay, cts.Token);
+            }
+            catch (TaskCanceledException)
+            {
+                logger.LogWarning("Retry delay was canceled. Stopping registration attempts.");
+                break;
+            }
         }
 
         return string.Empty;
