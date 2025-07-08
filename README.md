@@ -8,7 +8,7 @@ Rather than every client/server connecting directly to the FeatBit platform and 
 directly to your installed agent to receive any flag updates. The agent can support connecting to multiple environments
 across different projects for your organization, making it a 1:1 replacement for a direct connection.
 
-<img src="agent-overview.svg" />
+![Agent overview](agent-overview.svg)
 
 ## Use Cases
 
