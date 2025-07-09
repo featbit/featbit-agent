@@ -78,6 +78,18 @@ docker run -d \
   featbit/featbit-agent
 ```
 
+## Connect SDKs to the Agent
+
+To connect your SDKs to the FeatBit Agent, replace the `StreamingUri` and `EventUri` in your SDK options with the agent's address. Take the .NET SDK as an example:
+
+```csharp
+// setup SDK options to use the FeatBit Agent
+var options = new FbOptionsBuilder("<replace-with-your-env-secret>")
+    .Event(new Uri("http://<your-agent-host>"))
+    .Streaming(new Uri("ws://<your-agent-host>"))
+    .Build();
+```
+
 ## Health Checks
 
 The FeatBit Agent provides multiple health check endpoints to monitor its operational status:
@@ -115,7 +127,5 @@ Check the [API documentation](./docs/api.md) for a complete list of available en
 ### Getting Support
 
 - For troubleshooting, please read [troubleshooting guide](./docs/troubleshooting.md) first.
-- If you have a specific question about using this agent, we encourage you
-  to [ask it in our Slack](https://join.slack.com/t/featbit/shared_invite/zt-1ew5e2vbb-x6Apan1xZOaYMnFzqZkGNQ).
-- If you encounter a bug or would like to request a
-  feature, [submit an issue](https://github.com/featbit/featbit-agent/issues/new).
+- If you have a specific question about using this agent, we encourage you to [ask it in our Slack](https://join.slack.com/t/featbit/shared_invite/zt-1ew5e2vbb-x6Apan1xZOaYMnFzqZkGNQ).
+- If you encounter a bug or would like to request a feature, [submit an issue](https://github.com/featbit/featbit-agent/issues/new).
