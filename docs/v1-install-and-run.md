@@ -1,4 +1,4 @@
-> **Warning**
+> [!WARNING]
 > FeatBit Agent v1 is not compatible with FeatBit v3.3.1 and later versions.
 
 ### Download

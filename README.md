@@ -31,6 +31,9 @@ You may consider setting up the FeatBit Agent in the following scenarios:
 
 ## Quick Start
 
+> [!WARNING]
+> **Version Compatibility Notice**: This is FeatBit Agent v2, which requires **FeatBit v5.1.0 or later**. If you're using an older version of FeatBit, please use the [v1 agent instead](./docs/v1-install-and-run.md).
+
 > [!NOTE]
 > Before getting started, you should have a good understanding of what
 > a [relay proxy](https://docs.featbit.co/relay-proxy/relay-proxy) is.
