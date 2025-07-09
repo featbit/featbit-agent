@@ -14,7 +14,7 @@ on:
 
 env:
   VERSION_TAG: ${{ github.event.inputs.version }}
-  REGISTRY_IMAGE: featbit/agent
+  REGISTRY_IMAGE: featbit/featbit-agent
 
 jobs:
   build:
