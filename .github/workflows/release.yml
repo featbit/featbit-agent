@@ -1,58 +1,56 @@
-name: release
+name: Publish Docker Images
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version (for example: 1.0.0)"
+        description: "Image version (For example: 1.0.0)"
         required: true
+      build-latest:
+        description: "Build and publish latest image"
+        type: boolean
+        default: false
+        required: false
 
 env:
-  version: ${{ github.event.inputs.version }}
+  VERSION_TAG: ${{ github.event.inputs.version }}
+  REGISTRY_IMAGE: featbit/agent
 
 jobs:
-  build-and-release:
+  build:
+    name: Build and publish image to Docker Hub
     runs-on: ubuntu-latest
     steps:
-      - name: Echo Version Variable
-        run: echo "${{ env.version }}"
-
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
         with:
-          dotnet-version: '6.0.x'
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      - name: Restore Packages
-        run: dotnet restore
-
-      - name: Publish
-        working-directory: ./src/Api
-        shell: bash
-        env:
-          version: ${{ env.version }}
-        run: |
-          ls -a
-          chmod +x ./publish.sh
-          ./publish.sh
-
-      - name: Generate Release Note
-        shell: bash
-        run: |
-          ./get-changelog.sh v${{ env.version }} > ${{ github.workspace }}-CHANGELOG.txt
-          cat ${{ github.workspace }}-CHANGELOG.txt
-
-      - name: Create Release
-        uses: softprops/action-gh-release@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
         with:
-          tag_name: v${{ env.version }}
-          name: v${{ env.version }}
-          body_path: ${{ github.workspace }}-CHANGELOG.txt
-          prerelease: false
-          generate_release_notes: false
-          files: ./src/Api/publish/*.tar.gz
-          fail_on_unmatched_files: true
+          images: ${{ env.REGISTRY_IMAGE }}
+          tags: |
+            type=raw,value=${{ env.VERSION_TAG }}
+            type=raw,value=latest,enable=${{ github.event.inputs.build-latest }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
