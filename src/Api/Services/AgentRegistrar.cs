@@ -60,7 +60,15 @@ public class AgentRegistrar(
                 switch (ex)
                 {
                     case HttpRequestException hre:
-                        isRecoverable = HttpErrors.IsRecoverable((int?)hre.StatusCode);
+                        var status = (int?)hre.StatusCode;
+                        if (status is StatusCodes.Status403Forbidden)
+                        {
+                            isRecoverable = false;
+                            error = "No more agents can be registered with the current FeatBit license.";
+                            break;
+                        }
+
+                        isRecoverable = HttpErrors.IsRecoverable(status);
                         error = hre.Message;
                         break;
                     case OperationCanceledException when timeoutCts.IsCancellationRequested:

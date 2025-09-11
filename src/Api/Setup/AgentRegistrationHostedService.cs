@@ -17,7 +17,7 @@ public class AgentRegistrationHostedService(
         {
             throw new Exception(
                 "Agent registration failed. " +
-                "This is usually due to an invalid API key or network connectivity issues to the streaming server."
+                "This may due to an invalid API key, license quota limits or network connectivity issues to the streaming server."
             );
         }
 
