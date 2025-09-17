@@ -39,7 +39,7 @@ public class StatusSyncHostedService(
                     var payload = new StatusSyncPayload(agentId, status);
                     await dataSynchronizer.SyncStatusAsync(payload, cancellationToken);
 
-                    logger.LogInformation("Agent status synced.");
+                    logger.LogDebug("Agent status synced.");
 
                     // Wait for the next sync interval
                     await Task.Delay(_syncInterval, cancellationToken);

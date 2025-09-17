@@ -2,5 +2,5 @@ namespace Api.Services;
 
 public interface IAgentRegistrar
 {
-    Task<string> RegisterAsync(string agentId, CancellationToken cancellationToken = default);
+    Task<string> RegisterAsync(string agentId, CancellationToken stoppingToken = default);
 }

@@ -20,7 +20,7 @@ public class AgentRegistrar(
 
     private readonly AgentOptions _options = options.Value;
 
-    public async Task<string> RegisterAsync(string agentId, CancellationToken cancellationToken = default)
+    public async Task<string> RegisterAsync(string agentId, CancellationToken stoppingToken = default)
     {
         StringContent payload = new(
             JsonSerializer.Serialize(agentId),
@@ -34,7 +34,7 @@ public class AgentRegistrar(
             string error;
             using var timeoutCts = new CancellationTokenSource(_requestTimeout);
 
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, timeoutCts.Token);
 
             try
             {
@@ -60,10 +60,18 @@ public class AgentRegistrar(
                 switch (ex)
                 {
                     case HttpRequestException hre:
-                        isRecoverable = HttpErrors.IsRecoverable((int?)hre.StatusCode);
+                        var status = (int?)hre.StatusCode;
+                        if (status is StatusCodes.Status403Forbidden)
+                        {
+                            isRecoverable = false;
+                            error = "No more agents can be registered with the current FeatBit license.";
+                            break;
+                        }
+
+                        isRecoverable = HttpErrors.IsRecoverable(status);
                         error = hre.Message;
                         break;
-                    case OperationCanceledException when !cts.IsCancellationRequested:
+                    case OperationCanceledException when timeoutCts.IsCancellationRequested:
                         isRecoverable = true;
                         error = "Request timed out.";
                         break;
@@ -87,7 +95,8 @@ public class AgentRegistrar(
 
             try
             {
-                await Task.Delay(_retryDelay, cts.Token);
+                // ReSharper disable once PossiblyMistakenUseOfCancellationToken
+                await Task.Delay(_retryDelay, stoppingToken);
             }
             catch (TaskCanceledException)
             {
