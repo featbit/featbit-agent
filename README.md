@@ -60,6 +60,9 @@ Edit the environment variables in `docker-compose.yml` according to your FeatBit
 | ForwardEvents | Whether forward insights data (flag evaluation result, end users, etc) to the FeatBit server                                                  | `true`  |
 | EventUri      | Required when `ForwardEvents` is `true`. Event server uri, usually the same as evaluation server uri, for example: `http://your-event-server` | `""`    |
 
+> [!TIP]
+> For streaming settings, refer to the [Streaming Settings](https://github.com/featbit/featbit/tree/main/modules/evaluation-server#streaming) for more details.
+
 ### 3. Start the agent and verify it is running
 
 ```bash
