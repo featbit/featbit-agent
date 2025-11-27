@@ -55,7 +55,7 @@ Edit the environment variables in `docker-compose.yml` according to your FeatBit
 |---------------|-----------------------------------------------------------------------------------------------------------------------------------------------|---------|
 | ApiKey        | API Key of the relay proxy                                                                                                                    | `""`    |
 | Mode          | Operation mode of the agent (`auto` or `manual`)                                                                                              | `auto`  |
-| AgentId       | Unique identifier for the agent. Required when mode is `auto`                                                                                 | `""`    |
+| AgentId       | Required when mode is `auto`. Unique identifier for the agent.                                                                                | `""`    |
 | StreamingUri  | Required when mode is `auto`. Evaluation server streaming uri, for example: `ws://your-els-server`                                            | `""`    |
 | ForwardEvents | Whether forward insights data (flag evaluation result, end users, etc) to the FeatBit server                                                  | `true`  |
 | EventUri      | Required when `ForwardEvents` is `true`. Event server uri, usually the same as evaluation server uri, for example: `http://your-event-server` | `""`    |
