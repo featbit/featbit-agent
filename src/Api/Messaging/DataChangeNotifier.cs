@@ -1,3 +1,7 @@
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Api.Store;
 using Domain.Messages;
 using Streaming.Connections;
 using Streaming.Protocol;
@@ -9,17 +13,20 @@ public class DataChangeNotifier : IDataChangeNotifier
 {
     private readonly IConnectionManager _connectionManager;
     private readonly IDataSyncService _dataSyncService;
+    private readonly IAgentStore _agentStore;
     private readonly Dictionary<string, IMessageConsumer> _dataChangeHandlers;
     private readonly ILogger<DataChangeNotifier> _logger;
 
     public DataChangeNotifier(
         IConnectionManager connectionManager,
         IDataSyncService dataSyncService,
+        IAgentStore agentStore,
         IEnumerable<IMessageConsumer> messageHandlers,
         ILogger<DataChangeNotifier> logger)
     {
         _connectionManager = connectionManager;
         _dataSyncService = dataSyncService;
+        _agentStore = agentStore;
         _dataChangeHandlers = messageHandlers.ToDictionary(x => x.Topic, x => x);
         _logger = logger;
     }
@@ -60,39 +67,86 @@ public class DataChangeNotifier : IDataChangeNotifier
         }
     }
 
-    public async Task NotifyAsync(DataChangeMessage[] dataChanges)
+    public async Task NotifyAsync(DataChangeMessage dataChange)
     {
-        if (dataChanges.Length == 0)
+        if (!_dataChangeHandlers.TryGetValue(dataChange.Topic, out var handler))
         {
+            _logger.LogWarning("No data change handler found for topic {Topic}.", dataChange.Topic);
             return;
         }
 
-        foreach (var dataChange in dataChanges)
+        try
         {
-            if (!_dataChangeHandlers.TryGetValue(dataChange.Topic, out var handler))
+            await handler.HandleAsync(dataChange.Message, CancellationToken.None);
+
+            _logger.LogInformation(
+                "Notified data change for topic {Topic} (Item Id: {Id})",
+                dataChange.Topic, dataChange.Id
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Exception occurred while notifying data change for topic {Topic} (Item Id: {Id})",
+                dataChange.Topic,
+                dataChange.Id
+            );
+        }
+    }
+
+    public async Task NotifyAsync(StoreItem item)
+    {
+        var dataChange = await ItemToDataChangeAsync();
+        if (dataChange != null)
+        {
+            await NotifyAsync(dataChange);
+        }
+
+        return;
+
+        async ValueTask<DataChangeMessage?> ItemToDataChangeAsync()
+        {
+            if (item.Type == StoreItemType.Flag)
             {
-                _logger.LogWarning("No data change handler found for topic {Topic}.", dataChange.Topic);
-                continue;
+                var flagChange = new DataChangeMessage(
+                    Topics.FeatureFlagChange,
+                    item.Id,
+                    Encoding.UTF8.GetString(item.JsonBytes)
+                );
+
+                return flagChange;
             }
 
-            try
+            if (item.Type == StoreItemType.Segment)
             {
-                await handler.HandleAsync(dataChange.Message, CancellationToken.None);
+                using var segment = JsonDocument.Parse(item.JsonBytes);
 
-                _logger.LogInformation(
-                    "Notified data change for topic {Topic} (Item Id: {Id})",
-                    dataChange.Topic, dataChange.Id
+                var envId = segment.RootElement.GetProperty("envId").GetGuid();
+                var affectedIds = await _agentStore.GetFlagReferencesAsync(envId, item.Id);
+
+                JsonObject payload = new()
+                {
+                    ["segment"] = JsonSerializer.SerializeToNode(segment),
+                    ["affectedFlagIds"] = JsonSerializer.SerializeToNode(affectedIds)
+                };
+
+                var segmentChange = new DataChangeMessage(
+                    Topics.SegmentChange,
+                    item.Id,
+                    JsonSerializer.Serialize(payload)
                 );
+
+                return segmentChange;
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "Exception occurred while notifying data change for topic {Topic} (Item Id: {Id})",
-                    dataChange.Topic,
-                    dataChange.Id
-                );
-            }
+
+            _logger.LogWarning(
+                "Unsupported StoreItem type {Type} for item Id {Id}, skipping data change notification for it.",
+                item.Type,
+                item.Id
+            );
+
+            return null;
         }
     }
 }
