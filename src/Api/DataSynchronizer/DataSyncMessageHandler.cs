@@ -31,7 +31,8 @@ public class DataSyncMessageHandler(IAgentStore agentStore, IDataChangeNotifier 
                     .ToArray();
                 await agentStore.UpdateAsync(items);
 
-                await OnItemsUpdated(items);
+                // notify changes in background
+                _ = NotifyItemsUpdated(items);
                 break;
             }
             case DataSyncEventTypes.Patch:
@@ -39,13 +40,14 @@ public class DataSyncMessageHandler(IAgentStore agentStore, IDataChangeNotifier 
                 var patchDataSet = PatchDataSet.FromJson(data);
                 await agentStore.UpdateAsync(patchDataSet.Items);
 
-                await OnItemsUpdated(patchDataSet.Items);
+                // notify changes in background
+                _ = NotifyItemsUpdated(patchDataSet.Items);
                 break;
             }
         }
     }
 
-    private async Task OnItemsUpdated(StoreItem[] items)
+    private async Task NotifyItemsUpdated(StoreItem[] items)
     {
         List<DataChangeMessage> dataChanges = [];
 

@@ -75,12 +75,24 @@ public class DataChangeNotifier : IDataChangeNotifier
                 continue;
             }
 
-            await handler.HandleAsync(dataChange.Message, CancellationToken.None);
+            try
+            {
+                await handler.HandleAsync(dataChange.Message, CancellationToken.None);
 
-            _logger.LogInformation(
-                "Handled data change message for topic {Topic} (Item Id: {Id})",
-                dataChange.Topic, dataChange.Id
-            );
+                _logger.LogInformation(
+                    "Notified data change for topic {Topic} (Item Id: {Id})",
+                    dataChange.Topic, dataChange.Id
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Exception occurred while notifying data change for topic {Topic} (Item Id: {Id})",
+                    dataChange.Topic,
+                    dataChange.Id
+                );
+            }
         }
     }
 }
