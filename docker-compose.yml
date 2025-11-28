@@ -14,6 +14,8 @@ services:
       - StreamingUri=ws://evaluation-server:5100
       - ForwardEvents=true
       - EventUri=http://evaluation-server:5100
+      - Streaming__TrackClientHostName=true
+      - Streaming__TokenExpirySeconds=30
     networks:
       - featbit-network
 

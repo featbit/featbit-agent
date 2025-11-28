@@ -4,6 +4,7 @@ using Api.Services;
 using Api.Store;
 using Domain.Messages;
 using Domain.Shared;
+using Streaming;
 using Streaming.Connections;
 using Streaming.DependencyInjection;
 
@@ -14,6 +15,7 @@ public static class ServicesRegister
     public static WebApplicationBuilder RegisterServices(this WebApplicationBuilder builder)
     {
         var services = builder.Services;
+        var configuration = builder.Configuration;
 
         services.AddOptionsWithValidateOnStart<AgentOptions, AgentOptionsValidation>().Bind(builder.Configuration);
 
@@ -42,6 +44,9 @@ public static class ServicesRegister
         // streaming
         services.AddStreamingCore(x =>
         {
+            // bind from configuration
+            configuration.GetSection(StreamingOptions.Streaming).Bind(x);
+
             x.SupportedTypes = [ConnectionType.Server, ConnectionType.Client];
             x.CustomRpService = new NoopRelayProxyService();
         });
