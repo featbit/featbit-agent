@@ -1,14 +1,14 @@
-using System.Text;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using Api.Messaging;
 using Api.Store;
-using Domain.Messages;
 using Streaming.Protocol;
 
 namespace Api.DataSynchronizer;
 
-public class DataSyncMessageHandler(IAgentStore agentStore, IDataChangeNotifier dataChangeNotifier)
+public class DataSyncMessageHandler(
+    IAgentStore agentStore,
+    IDataChangeNotifier dataChangeNotifier,
+    ILogger<DataSyncMessageHandler> logger)
     : IDataSyncMessageHandler
 {
     public ValueTask<byte[]> GetRequestPayloadAsync() => agentStore.GetDataSyncPayloadAsync();
@@ -31,7 +31,7 @@ public class DataSyncMessageHandler(IAgentStore agentStore, IDataChangeNotifier 
                     .ToArray();
                 await agentStore.UpdateAsync(items);
 
-                await OnItemsUpdated(items);
+                await SafeNotifyAsync(items);
                 break;
             }
             case DataSyncEventTypes.Patch:
@@ -39,58 +39,28 @@ public class DataSyncMessageHandler(IAgentStore agentStore, IDataChangeNotifier 
                 var patchDataSet = PatchDataSet.FromJson(data);
                 await agentStore.UpdateAsync(patchDataSet.Items);
 
-                await OnItemsUpdated(patchDataSet.Items);
+                await SafeNotifyAsync(patchDataSet.Items);
                 break;
             }
         }
     }
 
-    private async Task OnItemsUpdated(StoreItem[] items)
+    private async Task SafeNotifyAsync(StoreItem[] items)
     {
-        List<DataChangeMessage> dataChanges = [];
-
         foreach (var item in items)
         {
-            await AddDataChange(item);
-        }
-
-        await dataChangeNotifier.NotifyAsync(dataChanges.ToArray());
-
-        return;
-
-        async Task AddDataChange(StoreItem item)
-        {
-            if (item.Type == StoreItemType.Flag)
+            try
             {
-                var flagChange = new DataChangeMessage(
-                    Topics.FeatureFlagChange,
-                    item.Id,
-                    Encoding.UTF8.GetString(item.JsonBytes)
-                );
-
-                dataChanges.Add(flagChange);
+                await dataChangeNotifier.NotifyAsync(item);
             }
-
-            if (item.Type == StoreItemType.Segment)
+            catch (Exception ex)
             {
-                using var segment = JsonDocument.Parse(item.JsonBytes);
-
-                var envId = segment.RootElement.GetProperty("envId").GetGuid();
-                var affectedIds = await agentStore.GetFlagReferencesAsync(envId, item.Id);
-
-                JsonObject payload = new()
-                {
-                    ["segment"] = JsonSerializer.SerializeToNode(segment),
-                    ["affectedFlagIds"] = JsonSerializer.SerializeToNode(affectedIds)
-                };
-
-                var segmentChange = new DataChangeMessage(
-                    Topics.SegmentChange,
+                logger.LogError(
+                    ex,
+                    "Exception occurred while processing StoreItem Id {Id} of type {Type} for data change notification.",
                     item.Id,
-                    JsonSerializer.Serialize(payload)
+                    item.Type
                 );
-
-                dataChanges.Add(segmentChange);
             }
         }
     }
