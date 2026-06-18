@@ -27,10 +27,6 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-# Create a non-root user for security
-RUN adduser --disabled-password --gecos '' appuser && chown -R appuser /app
-USER appuser
-
 # Copy the published application
 COPY --from=publish /app/publish .
 
