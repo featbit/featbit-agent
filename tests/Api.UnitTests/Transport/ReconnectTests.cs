@@ -33,7 +33,7 @@ public class FbWebSocketTests
     public void ShouldReconnect_WhenRequestIsInvalid_ReturnsFalse()
     {
         var shouldReconnect = FbWebSocket.ShouldReconnect(
-            (WebSocketCloseStatus)4003,
+            FbWebSocket.ServerRejectedCloseStatus,
             stopRequested: false
         );
 

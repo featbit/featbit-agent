@@ -5,6 +5,8 @@ namespace Api.Transport;
 
 internal sealed partial class FbWebSocket
 {
+    internal const WebSocketCloseStatus ServerRejectedCloseStatus = (WebSocketCloseStatus)4003;
+
     public event Func<Task>? OnConnected;
     public event Func<Task>? OnKeepAlive;
     public event Func<Exception?, Task>? OnReconnecting;
@@ -167,7 +169,7 @@ internal sealed partial class FbWebSocket
 
     internal static bool ShouldReconnect(WebSocketCloseStatus? closeStatus, bool stopRequested)
     {
-        if (closeStatus == (WebSocketCloseStatus)4003)
+        if (closeStatus == ServerRejectedCloseStatus)
         {
             // server rejected the connection explicitly, so we should not reconnect
             return false;

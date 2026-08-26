@@ -64,7 +64,13 @@ public sealed class WebSocketStubServer : IAsyncDisposable
 
     public async Task CloseAsync(int connectionId, WebSocketCloseStatus closeStatus)
     {
-        var connection = _connections[connectionId];
+        if (!_connections.TryGetValue(connectionId, out var connection))
+        {
+            throw new InvalidOperationException(
+                $"WebSocket connection {connectionId} is no longer active."
+            );
+        }
+
         await connection.CloseOutputAsync(closeStatus, "closed by test server", CancellationToken.None);
     }
 

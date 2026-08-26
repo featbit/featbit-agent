@@ -36,7 +36,9 @@ public class WebSocketReconnectTests
     [Fact]
     public async Task InvalidRequestClose_DoesNotReconnect()
     {
-        await using var server = await WebSocketStubServer.StartAsync((WebSocketCloseStatus)4003);
+        await using var server = await WebSocketStubServer.StartAsync(
+            FbWebSocket.ServerRejectedCloseStatus
+        );
         var webSocket = new FbWebSocket(server.WebSocketUri, NullLoggerFactory.Instance);
         var closed = new TaskCompletionSource<WebSocketCloseStatus?>(
             TaskCreationOptions.RunContinuationsAsynchronously
@@ -54,7 +56,7 @@ public class WebSocketReconnectTests
             var closeStatus = await closed.Task.WaitAsync(TimeSpan.FromSeconds(5));
             await Task.Delay(TimeSpan.FromMilliseconds(250));
 
-            Assert.Equal((WebSocketCloseStatus)4003, closeStatus);
+            Assert.Equal(FbWebSocket.ServerRejectedCloseStatus, closeStatus);
             Assert.Equal(1, server.ConnectionCount);
         }
         finally
