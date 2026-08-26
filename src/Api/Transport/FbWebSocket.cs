@@ -42,12 +42,15 @@ internal sealed partial class FbWebSocket
     public async Task ConnectAsync(bool isReconnecting = false)
     {
         _websocket = new ClientWebSocket();
-        using var connectCts = new CancellationTokenSource(_connectTimeout);
+
+        using var connectCts = CancellationTokenSource.CreateLinkedTokenSource(_stopCts.Token);
+        connectCts.CancelAfter(_connectTimeout);
 
         try
         {
             Log.Starting(_logger, _websocketUri);
             await _websocket.ConnectAsync(_websocketUri, connectCts.Token);
+            _stopCts.Token.ThrowIfCancellationRequested();
 
             Log.Connected(_logger);
 
@@ -61,12 +64,14 @@ internal sealed partial class FbWebSocket
         {
             Log.ErrorStarting(_logger, ex);
 
-            if (ex is TaskCanceledException tce && tce.CancellationToken == connectCts.Token)
+            if (ex is OperationCanceledException && !_stopCts.IsCancellationRequested)
             {
                 Log.TimedOut(_logger, _connectTimeout.TotalSeconds);
             }
 
-            if (!isReconnecting)
+            _websocket.Dispose();
+
+            if (!isReconnecting && !_stopCts.IsCancellationRequested)
             {
                 _ = ReconnectAsync();
             }
@@ -102,7 +107,6 @@ internal sealed partial class FbWebSocket
         }
 
         _stopCts.Cancel();
-        _stopCts.Dispose();
 
         _keepAliveTimer?.Dispose();
 

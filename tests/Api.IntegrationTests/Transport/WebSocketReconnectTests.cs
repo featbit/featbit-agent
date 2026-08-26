@@ -63,4 +63,36 @@ public class WebSocketReconnectTests
             await webSocket.CloseAsync(CancellationToken.None);
         }
     }
+
+    [Fact]
+    public async Task NormalClosure_WhenStoppedDuringReconnect_DoesNotReconnect()
+    {
+        await using var server = await WebSocketStubServer.StartAsync();
+        var webSocket = new FbWebSocket(server.WebSocketUri, NullLoggerFactory.Instance);
+        var reconnecting = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously
+        );
+        webSocket.OnReconnecting += _ =>
+        {
+            reconnecting.TrySetResult();
+            return webSocket.CloseAsync(CancellationToken.None);
+        };
+
+        try
+        {
+            await webSocket.ConnectAsync();
+            await server.WaitForConnectionsAsync(1);
+
+            await server.CloseAsync(1, WebSocketCloseStatus.NormalClosure);
+            await reconnecting.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await Task.Delay(TimeSpan.FromMilliseconds(250));
+
+            Assert.Equal(1, server.ConnectionCount);
+        }
+        finally
+        {
+            server.AbortConnections();
+            await webSocket.CloseAsync(CancellationToken.None);
+        }
+    }
 }
