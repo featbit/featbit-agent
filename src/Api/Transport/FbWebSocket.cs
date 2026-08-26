@@ -5,6 +5,8 @@ namespace Api.Transport;
 
 internal sealed partial class FbWebSocket
 {
+    internal const WebSocketCloseStatus ServerRejectedCloseStatus = (WebSocketCloseStatus)4003;
+
     public event Func<Task>? OnConnected;
     public event Func<Task>? OnKeepAlive;
     public event Func<Exception?, Task>? OnReconnecting;
@@ -42,12 +44,15 @@ internal sealed partial class FbWebSocket
     public async Task ConnectAsync(bool isReconnecting = false)
     {
         _websocket = new ClientWebSocket();
-        using var connectCts = new CancellationTokenSource(_connectTimeout);
+
+        using var connectCts = CancellationTokenSource.CreateLinkedTokenSource(_stopCts.Token);
+        connectCts.CancelAfter(_connectTimeout);
 
         try
         {
             Log.Starting(_logger, _websocketUri);
             await _websocket.ConnectAsync(_websocketUri, connectCts.Token);
+            _stopCts.Token.ThrowIfCancellationRequested();
 
             Log.Connected(_logger);
 
@@ -61,12 +66,14 @@ internal sealed partial class FbWebSocket
         {
             Log.ErrorStarting(_logger, ex);
 
-            if (ex is TaskCanceledException tce && tce.CancellationToken == connectCts.Token)
+            if (ex is OperationCanceledException && !_stopCts.IsCancellationRequested)
             {
                 Log.TimedOut(_logger, _connectTimeout.TotalSeconds);
             }
 
-            if (!isReconnecting)
+            _websocket.Dispose();
+
+            if (!isReconnecting && !_stopCts.IsCancellationRequested)
             {
                 _ = ReconnectAsync();
             }
@@ -102,7 +109,6 @@ internal sealed partial class FbWebSocket
         }
 
         _stopCts.Cancel();
-        _stopCts.Dispose();
 
         _keepAliveTimer?.Dispose();
 
@@ -159,10 +165,24 @@ internal sealed partial class FbWebSocket
         }
     }
 
-    private bool ShouldReconnect()
+    private bool ShouldReconnect() => ShouldReconnect(_websocket?.CloseStatus, _stopCts.IsCancellationRequested);
+
+    internal static bool ShouldReconnect(WebSocketCloseStatus? closeStatus, bool stopRequested)
     {
-        var closeStatus = _websocket?.CloseStatus;
-        return closeStatus != WebSocketCloseStatus.NormalClosure && closeStatus != (WebSocketCloseStatus)4003;
+        if (closeStatus == ServerRejectedCloseStatus)
+        {
+            // server rejected the connection explicitly, so we should not reconnect
+            return false;
+        }
+
+        if (stopRequested)
+        {
+            // connection was stopped manually, so we should not reconnect
+            return false;
+        }
+
+        // otherwise, we should reconnect
+        return true;
     }
 
     private async Task ReconnectAsync()
