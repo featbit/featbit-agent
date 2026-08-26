@@ -159,10 +159,24 @@ internal sealed partial class FbWebSocket
         }
     }
 
-    private bool ShouldReconnect()
+    private bool ShouldReconnect() => ShouldReconnect(_websocket?.CloseStatus, _stopCts.IsCancellationRequested);
+
+    internal static bool ShouldReconnect(WebSocketCloseStatus? closeStatus, bool stopRequested)
     {
-        var closeStatus = _websocket?.CloseStatus;
-        return closeStatus != WebSocketCloseStatus.NormalClosure && closeStatus != (WebSocketCloseStatus)4003;
+        if (closeStatus == (WebSocketCloseStatus)4003)
+        {
+            // server rejected the connection explicitly, so we should not reconnect
+            return false;
+        }
+
+        if (stopRequested)
+        {
+            // connection was stopped manually, so we should not reconnect
+            return false;
+        }
+
+        // otherwise, we should reconnect
+        return true;
     }
 
     private async Task ReconnectAsync()
