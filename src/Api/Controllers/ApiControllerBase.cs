@@ -1,4 +1,4 @@
-using Domain.Shared;
+using Domain.Secrets;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
