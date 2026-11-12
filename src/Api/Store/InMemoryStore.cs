@@ -26,13 +26,16 @@ internal sealed class InMemoryStore : IAgentStore, IStore
     {
         get
         {
-            var envs = _secrets
-                .GroupBy(x => x.EnvId)
-                .Select(envSecrets => envSecrets.First())
-                .Select(envSecret => $"{envSecret.ProjectKey}:{envSecret.EnvKey}");
+            lock (_writeLock)
+            {
+                var envs = _secrets
+                    .GroupBy(x => x.EnvId)
+                    .Select(envSecrets => envSecrets.First())
+                    .Select(envSecret => $"{envSecret.ProjectKey}:{envSecret.EnvKey}");
 
-            var served = string.Join(",", envs);
-            return served;
+                var served = string.Join(",", envs);
+                return served;
+            }
         }
     }
 
@@ -57,11 +60,26 @@ internal sealed class InMemoryStore : IAgentStore, IStore
             _secrets.Clear();
             _items.Clear();
 
+            var flagIndexes = new Dictionary<(Guid EnvId, string? Key), int>();
+
             foreach (var item in dataSet.Items)
             {
                 _secrets.AddRange(item.Secrets);
 
-                _items.AddRange(item.FeatureFlags);
+                foreach (var flag in item.FeatureFlags)
+                {
+                    // Index flags during full loading to avoid scanning the growing list.
+                    var identity = (flag.EnvId, flag.Key);
+                    if (!flagIndexes.TryGetValue(identity, out var index))
+                    {
+                        flagIndexes.Add(identity, _items.Count);
+                        _items.Add(flag);
+                    }
+                    else if (_items[index].Timestamp <= flag.Timestamp)
+                    {
+                        _items[index] = flag;
+                    }
+                }
                 _items.AddRange(item.Segments);
 
                 // update versions
@@ -91,59 +109,65 @@ internal sealed class InMemoryStore : IAgentStore, IStore
             foreach (var item in items)
             {
                 UpsertItem(item);
+
+                // update versions
+                if (item.Timestamp > Version)
+                {
+                    Version = item.Timestamp;
+                }
+
+                _envVersions[item.EnvId] = Math.Max(_envVersions.GetValueOrDefault(item.EnvId, 0), item.Timestamp);
             }
         }
 
         return ValueTask.CompletedTask;
+    }
 
-        void UpsertItem(StoreItem item)
+    private void UpsertItem(StoreItem item)
+    {
+        // Flags are identified by key in SDKs; recreating one changes its database ID.
+        // Shared segments still use their database ID within each environment.
+        var index = _items.FindIndex(x =>
+            x.EnvId == item.EnvId && x.Type == item.Type &&
+            (item.Type == StoreItemType.Flag ? x.Key == item.Key : x.Id == item.Id));
+
+        if (index < 0)
         {
-            // shared segment can cross multiple envs
-            var existingItem = _items.FirstOrDefault(x => x.Id == item.Id && x.EnvId == item.EnvId);
-            if (existingItem == null)
-            {
-                // if the item doesn't exist, add it
-                _items.Add(item);
-            }
-            else if (existingItem.Timestamp <= item.Timestamp)
-            {
-                // if the item exists and the new item has a newer timestamp, update it
-                existingItem.Update(item);
-            }
-
-            // update versions
-            if (item.Timestamp > Version)
-            {
-                Version = item.Timestamp;
-            }
-
-            _envVersions[item.EnvId] = Math.Max(_envVersions.GetValueOrDefault(item.EnvId, 0), item.Timestamp);
+            _items.Add(item);
+        }
+        else if (_items[index].Timestamp <= item.Timestamp)
+        {
+            // Replace the entire record so ID-based lookups use the new database ID too.
+            _items[index] = item;
         }
     }
 
     public ValueTask<byte[]> GetDataSyncPayloadAsync()
     {
-        if (Version == 0)
+        lock (_writeLock)
         {
-            return ValueTask.FromResult(FullDataSync);
-        }
-
-        object patchDataSync = new
-        {
-            messageType = "data-sync",
-            data = new
+            if (Version == 0)
             {
-                timestamp = Version,
-                envs = _envVersions.Select(x => new
-                {
-                    envId = x.Key,
-                    timestamp = x.Value
-                })
+                return ValueTask.FromResult(FullDataSync);
             }
-        };
 
-        var bytes = JsonSerializer.SerializeToUtf8Bytes(patchDataSync);
-        return ValueTask.FromResult(bytes);
+            object patchDataSync = new
+            {
+                messageType = "data-sync",
+                data = new
+                {
+                    timestamp = Version,
+                    envs = _envVersions.Select(x => new
+                    {
+                        envId = x.Key,
+                        timestamp = x.Value
+                    })
+                }
+            };
+
+            var bytes = JsonSerializer.SerializeToUtf8Bytes(patchDataSync);
+            return ValueTask.FromResult(bytes);
+        }
     }
 
     public ValueTask<DataSetSnapshot> GetSnapshotAsync()
@@ -182,58 +206,79 @@ internal sealed class InMemoryStore : IAgentStore, IStore
 
     public Task<IEnumerable<byte[]>> GetFlagsAsync(Guid envId, long timestamp)
     {
-        var flags = _items
-            .Where(x => x.EnvId == envId && x.Type == StoreItemType.Flag && x.Timestamp > timestamp)
-            .Select(x => x.JsonBytes);
+        lock (_writeLock)
+        {
+            var flags = _items
+                .Where(x => x.EnvId == envId && x.Type == StoreItemType.Flag && x.Timestamp > timestamp)
+                .Select(x => x.JsonBytes)
+                .ToArray();
 
-        return Task.FromResult(flags);
+            return Task.FromResult<IEnumerable<byte[]>>(flags);
+        }
     }
 
     public Task<IEnumerable<byte[]>> GetFlagsAsync(IEnumerable<string> ids)
     {
-        var flags = _items
-            .Where(x => ids.Contains(x.Id))
-            .Select(x => x.JsonBytes);
+        lock (_writeLock)
+        {
+            var flags = _items
+                .Where(x => ids.Contains(x.Id))
+                .Select(x => x.JsonBytes)
+                .ToArray();
 
-        return Task.FromResult(flags);
+            return Task.FromResult<IEnumerable<byte[]>>(flags);
+        }
     }
 
     public Task<byte[]> GetSegmentAsync(string id)
     {
-        // shared segments can cross multiple envs and we return the latest one
-        var segment = _items
-            .Where(x => x.Id == id)
-            .OrderByDescending(x => x.Timestamp)
-            .First();
+        lock (_writeLock)
+        {
+            // shared segments can cross multiple envs and we return the latest one
+            var segment = _items
+                .Where(x => x.Id == id)
+                .OrderByDescending(x => x.Timestamp)
+                .First();
 
-        return Task.FromResult(segment.JsonBytes);
+            return Task.FromResult(segment.JsonBytes);
+        }
     }
 
     public Task<IEnumerable<byte[]>> GetSegmentsAsync(Guid envId, long timestamp)
     {
-        var segments = _items
-            .Where(x => x.EnvId == envId && x.Type == StoreItemType.Segment && x.Timestamp > timestamp)
-            .Select(x => x.JsonBytes);
+        lock (_writeLock)
+        {
+            var segments = _items
+                .Where(x => x.EnvId == envId && x.Type == StoreItemType.Segment && x.Timestamp > timestamp)
+                .Select(x => x.JsonBytes)
+                .ToArray();
 
-        return Task.FromResult(segments);
+            return Task.FromResult<IEnumerable<byte[]>>(segments);
+        }
     }
 
     public Task<Secret?> GetSecretAsync(string secretString)
     {
-        var secretWithValue = _secrets.FirstOrDefault(x => x.Value == secretString);
+        lock (_writeLock)
+        {
+            var secretWithValue = _secrets.FirstOrDefault(x => x.Value == secretString);
 
-        var secret = secretWithValue?.AsSecret();
-        return Task.FromResult(secret);
+            var secret = secretWithValue?.AsSecret();
+            return Task.FromResult(secret);
+        }
     }
 
     public ValueTask<string[]> GetFlagReferencesAsync(Guid envId, string segmentId)
     {
-        var flagIds = _items
-            .Where(x => x.EnvId == envId && x.Type == StoreItemType.Flag)
-            .Where(x => x.HasSegmentReference(segmentId))
-            .Select(x => x.Id)
-            .ToArray();
+        lock (_writeLock)
+        {
+            var flagIds = _items
+                .Where(x => x.EnvId == envId && x.Type == StoreItemType.Flag)
+                .Where(x => x.HasSegmentReference(segmentId))
+                .Select(x => x.Id)
+                .ToArray();
 
-        return ValueTask.FromResult(flagIds);
+            return ValueTask.FromResult(flagIds);
+        }
     }
 }

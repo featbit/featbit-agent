@@ -6,6 +6,8 @@ public class StoreItem
 {
     public string Id { get; set; }
 
+    public string? Key { get; private set; }
+
     public Guid EnvId { get; set; }
 
     public string Type { get; set; }
@@ -30,6 +32,12 @@ public class StoreItem
         Type = type;
         Timestamp = timestamp;
         JsonBytes = jsonBytes;
+        if (type == StoreItemType.Flag)
+        {
+            using var json = JsonDocument.Parse(jsonBytes);
+            Key = json.RootElement.GetProperty("key").GetString()
+                ?? throw new JsonException("Flag key cannot be null.");
+        }
     }
 
     public void Update(StoreItem item)
