@@ -57,6 +57,9 @@ public class StoreItem
                 var key = json.TryGetProperty("key", out var keyProperty)
                     ? keyProperty.GetString() ?? id
                     : id;
+
+                // Shared segments may have the same key across environments,
+                // so we prefix the identity with the segment type to avoid collisions.
                 var segmentType = json.GetProperty("type").GetString()!;
                 identity = $"{segmentType}_{key}";
                 break;
