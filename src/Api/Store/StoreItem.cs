@@ -48,30 +48,12 @@ public class StoreItem
     {
         var id = json.GetProperty("id").GetString()!;
 
-        string identity;
-        switch (type)
+        var identity = type switch
         {
-            case StoreItemType.Segment:
-            {
-                // Segment keys were introduced in FeatBit 5.2.1.
-                var key = json.TryGetProperty("key", out var keyProperty)
-                    ? keyProperty.GetString() ?? id
-                    : id;
-
-                // Shared segments may have the same key across environments,
-                // so we prefix the identity with the segment type to avoid collisions.
-                var segmentType = json.GetProperty("type").GetString()!;
-                identity = $"{segmentType}_{key}";
-                break;
-            }
-            case StoreItemType.Flag:
-            {
-                identity = json.GetProperty("key").GetString()!;
-                break;
-            }
-            default:
-                throw new InvalidOperationException($"Unsupported StoreItem type: {type}");
-        }
+            StoreItemType.Segment => id,
+            StoreItemType.Flag => json.GetProperty("key").GetString()!,
+            _ => throw new InvalidOperationException($"Unsupported StoreItem type: {type}")
+        };
 
         var envId = json.GetProperty("envId").GetGuid();
         var timestamp = json.GetProperty("updatedAt").GetDateTimeOffset().ToUnixTimeMilliseconds();

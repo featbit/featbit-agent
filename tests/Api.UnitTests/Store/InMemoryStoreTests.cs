@@ -7,37 +7,28 @@ namespace Api.UnitTests.Store;
 public class InMemoryStoreTests
 {
     [Theory]
-    [InlineData("flag", false)]
-    [InlineData("flag", true)]
-    [InlineData("segment", false)]
-    [InlineData("segment", true)]
-    public async Task RecreatedItem_KeepsNewestRecord_InFullAndIncrementalSync(string type, bool full)
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task RecreatedFlags_KeepNewestRecord_InFullAndIncrementalSync(bool full)
     {
         var env = Guid.NewGuid();
-        var old = Item("old", env, type, 10, "same", archived: true);
-        var current = Item("new", env, type, 20, "same");
-        var stale = Item("stale", env, type, 15, "same", archived: true);
+        var old = Item("old", env, "flag", 10, "same", archived: true);
+        var current = Item("new", env, "flag", 20, "same");
+        var stale = Item("stale", env, "flag", 15, "same", archived: true);
         var store = new InMemoryStore();
 
         await Load(store, full, old, current, stale);
 
-        var bytes = Assert.Single(await Read(store, env, type));
+        var bytes = Assert.Single(await store.GetFlagsAsync(env, 0));
         Assert.Equal(current.JsonBytes, bytes);
-        if (type == "flag")
-        {
-            Assert.Empty(await store.GetFlagsAsync(new[] { "old" }));
-            Assert.Single(await store.GetFlagsAsync(new[] { "new" }));
-        }
-        else
-        {
-            Assert.Equal(current.JsonBytes, await store.GetSegmentAsync("new"));
-        }
+        Assert.Empty(await store.GetFlagsAsync(new[] { "old" }));
+        Assert.Single(await store.GetFlagsAsync(new[] { "new" }));
     }
 
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task LegacySegments_UseId_WhenKeyIsMissing(bool full)
+    public async Task Segments_UpdateById_KeepingNewestRecord(bool full)
     {
         var env = Guid.NewGuid();
         var first = Item("a", env, "segment", 10);
@@ -45,7 +36,7 @@ public class InMemoryStoreTests
         var updated = Item("a", env, "segment", 20);
         var store = new InMemoryStore();
 
-        await Load(store, full, first, second, updated);
+        await Load(store, full, first, second, updated, first);
 
         Assert.Equal(2, (await store.GetSegmentsAsync(env, 0)).Count());
         Assert.Equal(updated.JsonBytes, await store.GetSegmentAsync("a"));
@@ -55,16 +46,16 @@ public class InMemoryStoreTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task Keys_AreIsolatedByEnvironmentAndType(bool full)
+    public async Task Items_AreIsolatedByEnvironmentAndType(bool full)
     {
         var env = Guid.NewGuid();
         var otherEnv = Guid.NewGuid();
         var store = new InMemoryStore();
         await Load(store, full,
             Item("flag", env, "flag", 10, "same"),
-            Item("segment", env, "segment", 10, "same"),
-            Item("other", otherEnv, "segment", 10, "same"),
-            Item("legacy-id", env, "segment", 10));
+            Item("same", env, "segment", 10),
+            Item("same", otherEnv, "segment", 10),
+            Item("other-id", env, "segment", 10));
 
         Assert.Single(await store.GetFlagsAsync(env, 0));
         Assert.Equal(2, (await store.GetSegmentsAsync(env, 0)).Count());
@@ -79,7 +70,7 @@ public class InMemoryStoreTests
     public async Task EqualTimestamps_KeepLastReceivedRecord(string type, bool full)
     {
         var env = Guid.NewGuid();
-        var last = Item("last", env, type, 10, "same");
+        var last = Item(type == "segment" ? "first" : "last", env, type, 10, "same", archived: true);
         var store = new InMemoryStore();
         await Load(store, full, Item("first", env, type, 10, "same"), last);
         Assert.Equal(last.JsonBytes, Assert.Single(await Read(store, env, type)));
@@ -98,31 +89,6 @@ public class InMemoryStoreTests
         await store.UpdateAsync([Item("replacement", env, type, 20, "same")]);
         await Load(store, true, Item("reload", env, type, 30, "other"));
         Assert.Equal(original.JsonBytes, Assert.Single(result));
-    }
-
-    [Fact]
-    public void StoreItem_ComputesIdentity()
-    {
-        var env = Guid.NewGuid();
-        Assert.Equal("explicit-key", Item("id", env, "flag", 10, "explicit-key").Identity);
-        Assert.Equal("shared_explicit-key", Item("id", env, "segment", 10, "explicit-key").Identity);
-        Assert.Equal("shared_id", Item("id", env, "segment", 10).Identity);
-        Assert.Equal("shared_id", Item("id", env, "segment", 10, nullKey: true).Identity);
-    }
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task SegmentTypes_WithSameKey_AreRetained(bool full)
-    {
-        var env = Guid.NewGuid();
-        var shared = Item("shared-id", env, "segment", 10, "same");
-        var local = Item("local-id", env, "segment", 20, "same", segmentType: "environment-specific");
-        var store = new InMemoryStore();
-        await Load(store, full, shared, local);
-        Assert.Equal(2, (await store.GetSegmentsAsync(env, 0)).Count());
-        Assert.Equal(shared.JsonBytes, await store.GetSegmentAsync("shared-id"));
-        Assert.Equal(local.JsonBytes, await store.GetSegmentAsync("local-id"));
     }
 
     private static async Task Load(InMemoryStore store, bool full, params StoreItem[] items)
@@ -150,7 +116,7 @@ public class InMemoryStoreTests
         type == "flag" ? store.GetFlagsAsync(env, 0) : store.GetSegmentsAsync(env, 0);
 
     private static StoreItem Item(string id, Guid env, string type, long timestamp,
-        string? key = null, bool archived = false, bool nullKey = false, string segmentType = "shared")
+        string? key = null, bool archived = false)
     {
         var payload = new Dictionary<string, object?>
         {
@@ -158,8 +124,7 @@ public class InMemoryStoreTests
             ["updatedAt"] = DateTimeOffset.FromUnixTimeMilliseconds(timestamp),
             ["isArchived"] = archived
         };
-        if (type == "segment") payload["type"] = segmentType;
-        if (key != null || nullKey) payload["key"] = key;
+        if (type == "flag") payload["key"] = key;
         using var json = JsonDocument.Parse(JsonSerializer.Serialize(payload));
         return StoreItem.Of(json.RootElement, type);
     }
