@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="FeatBit.EvaluationServer.Streaming" Version="5.4.2" />
+        <PackageReference Include="FeatBit.EvaluationServer.Streaming" Version="6.1.1" />
     </ItemGroup>
 
     <ItemGroup>

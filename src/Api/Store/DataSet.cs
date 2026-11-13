@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Domain.Secrets;
 using Domain.Shared;
 using Streaming.Protocol;
 

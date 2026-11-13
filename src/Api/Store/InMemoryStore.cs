@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Domain.Secrets;
 using Domain.Shared;
 using Streaming.Protocol;
 
@@ -189,7 +190,7 @@ internal sealed class InMemoryStore : IAgentStore, IStore
         return Task.FromResult(flags);
     }
 
-    public Task<IEnumerable<byte[]>> GetFlagsAsync(IEnumerable<string> ids)
+    public Task<IEnumerable<byte[]>> GetFlagsAsync(string[] ids)
     {
         var flags = _items
             .Where(x => ids.Contains(x.Id))
