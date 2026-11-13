@@ -2,11 +2,13 @@ using System.Text.Json;
 
 namespace Api.Store;
 
+public readonly record struct StoreItemKey(Guid EnvId, string Type, string Key);
+
 public class StoreItem
 {
     public string Id { get; set; }
 
-    public string? Key { get; private set; }
+    public string Key { get; private set; }
 
     public Guid EnvId { get; set; }
 
@@ -19,25 +21,21 @@ public class StoreItem
     public StoreItem()
     {
         Id = Guid.NewGuid().ToString();
+        Key = Id;
         EnvId = Guid.Empty;
         Type = string.Empty;
         Timestamp = 0;
         JsonBytes = [];
     }
 
-    public StoreItem(string id, Guid envId, string type, long timestamp, byte[] jsonBytes)
+    public StoreItem(string id, string key, Guid envId, string type, long timestamp, byte[] jsonBytes)
     {
         Id = id;
+        Key = key;
         EnvId = envId;
         Type = type;
         Timestamp = timestamp;
         JsonBytes = jsonBytes;
-        if (type == StoreItemType.Flag)
-        {
-            using var json = JsonDocument.Parse(jsonBytes);
-            Key = json.RootElement.GetProperty("key").GetString()
-                ?? throw new JsonException("Flag key cannot be null.");
-        }
     }
 
     public void Update(StoreItem item)
@@ -49,11 +47,15 @@ public class StoreItem
     public static StoreItem Of(JsonElement json, string type)
     {
         var id = json.GetProperty("id").GetString()!;
+        // Segment keys were introduced in FeatBit 5.2.1.
+        var key = json.TryGetProperty("key", out var keyProperty)
+            ? keyProperty.GetString() ?? id
+            : id;
         var envId = json.GetProperty("envId").GetGuid();
         var timestamp = json.GetProperty("updatedAt").GetDateTimeOffset().ToUnixTimeMilliseconds();
         var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(json);
 
-        return new StoreItem(id, envId, type, timestamp, jsonBytes);
+        return new StoreItem(id, key, envId, type, timestamp, jsonBytes);
     }
 
     public bool HasSegmentReference(string segmentId)

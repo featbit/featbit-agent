@@ -10,11 +10,12 @@ internal sealed class InMemoryStore : IAgentStore, IStore
     private static readonly byte[] FullDataSync =
         "{\"messageType\":\"data-sync\",\"data\":{\"timestamp\":0}}"u8.ToArray();
 
-    private readonly object _writeLock = new();
 
     private readonly Dictionary<Guid, long> _envVersions = new();
     private readonly List<SecretWithValue> _secrets = [];
-    private readonly List<StoreItem> _items = [];
+
+    private readonly ReaderWriterLockSlim _storeLock = new();
+    private readonly Dictionary<StoreItemKey, StoreItem> _items = [];
 
     public string Name => "Memory";
 
@@ -26,7 +27,9 @@ internal sealed class InMemoryStore : IAgentStore, IStore
     {
         get
         {
-            lock (_writeLock)
+            _storeLock.EnterReadLock();
+
+            try
             {
                 var envs = _secrets
                     .GroupBy(x => x.EnvId)
@@ -35,6 +38,10 @@ internal sealed class InMemoryStore : IAgentStore, IStore
 
                 var served = string.Join(",", envs);
                 return served;
+            }
+            finally
+            {
+                _storeLock.ExitReadLock();
             }
         }
     }
@@ -55,12 +62,12 @@ internal sealed class InMemoryStore : IAgentStore, IStore
 
     public ValueTask PopulateAsync(DataSet dataSet)
     {
-        lock (_writeLock)
+        _storeLock.EnterWriteLock();
+
+        try
         {
             _secrets.Clear();
             _items.Clear();
-
-            var flagIndexes = new Dictionary<(Guid EnvId, string? Key), int>();
 
             foreach (var item in dataSet.Items)
             {
@@ -68,19 +75,13 @@ internal sealed class InMemoryStore : IAgentStore, IStore
 
                 foreach (var flag in item.FeatureFlags)
                 {
-                    // Index flags during full loading to avoid scanning the growing list.
-                    var identity = (flag.EnvId, flag.Key);
-                    if (!flagIndexes.TryGetValue(identity, out var index))
-                    {
-                        flagIndexes.Add(identity, _items.Count);
-                        _items.Add(flag);
-                    }
-                    else if (_items[index].Timestamp <= flag.Timestamp)
-                    {
-                        _items[index] = flag;
-                    }
+                    UpsertItem(flag);
                 }
-                _items.AddRange(item.Segments);
+
+                foreach (var segment in item.Segments)
+                {
+                    UpsertItem(segment);
+                }
 
                 // update versions
                 var timestamps = item.FeatureFlags.Select(x => x.Timestamp)
@@ -98,13 +99,19 @@ internal sealed class InMemoryStore : IAgentStore, IStore
 
             Initialized = true;
         }
+        finally
+        {
+            _storeLock.ExitWriteLock();
+        }
 
         return ValueTask.CompletedTask;
     }
 
     public ValueTask UpdateAsync(StoreItem[] items)
     {
-        lock (_writeLock)
+        _storeLock.EnterWriteLock();
+
+        try
         {
             foreach (var item in items)
             {
@@ -119,32 +126,19 @@ internal sealed class InMemoryStore : IAgentStore, IStore
                 _envVersions[item.EnvId] = Math.Max(_envVersions.GetValueOrDefault(item.EnvId, 0), item.Timestamp);
             }
         }
+        finally
+        {
+            _storeLock.ExitWriteLock();
+        }
 
         return ValueTask.CompletedTask;
     }
 
-    private void UpsertItem(StoreItem item)
-    {
-        // Flags are identified by key in SDKs; recreating one changes its database ID.
-        // Shared segments still use their database ID within each environment.
-        var index = _items.FindIndex(x =>
-            x.EnvId == item.EnvId && x.Type == item.Type &&
-            (item.Type == StoreItemType.Flag ? x.Key == item.Key : x.Id == item.Id));
-
-        if (index < 0)
-        {
-            _items.Add(item);
-        }
-        else if (_items[index].Timestamp <= item.Timestamp)
-        {
-            // Replace the entire record so ID-based lookups use the new database ID too.
-            _items[index] = item;
-        }
-    }
-
     public ValueTask<byte[]> GetDataSyncPayloadAsync()
     {
-        lock (_writeLock)
+        _storeLock.EnterReadLock();
+
+        try
         {
             if (Version == 0)
             {
@@ -168,11 +162,17 @@ internal sealed class InMemoryStore : IAgentStore, IStore
             var bytes = JsonSerializer.SerializeToUtf8Bytes(patchDataSync);
             return ValueTask.FromResult(bytes);
         }
+        finally
+        {
+            _storeLock.ExitReadLock();
+        }
     }
 
     public ValueTask<DataSetSnapshot> GetSnapshotAsync()
     {
-        lock (_writeLock)
+        _storeLock.EnterReadLock();
+
+        try
         {
             var items = new List<DataSetSnapshotItem>();
 
@@ -182,12 +182,12 @@ internal sealed class InMemoryStore : IAgentStore, IStore
                 var envId = group.Key;
                 var secrets = group.ToArray();
 
-                var flags = _items
+                var flags = _items.Values
                     .Where(x => x.EnvId == envId && x.Type == StoreItemType.Flag)
                     .Select(x => JsonSerializer.Deserialize<JsonObject>(x.JsonBytes)!)
                     .ToArray();
 
-                var segments = _items
+                var segments = _items.Values
                     .Where(x => x.EnvId == envId && x.Type == StoreItemType.Segment)
                     .Select(x => JsonSerializer.Deserialize<JsonObject>(x.JsonBytes)!)
                     .ToArray();
@@ -200,85 +200,138 @@ internal sealed class InMemoryStore : IAgentStore, IStore
 
             return ValueTask.FromResult(dataSet);
         }
+        finally
+        {
+            _storeLock.ExitReadLock();
+        }
     }
 
     public Task<bool> IsAvailableAsync() => Task.FromResult(true);
 
     public Task<IEnumerable<byte[]>> GetFlagsAsync(Guid envId, long timestamp)
     {
-        lock (_writeLock)
+        _storeLock.EnterReadLock();
+
+        try
         {
-            var flags = _items
+            var flags = _items.Values
                 .Where(x => x.EnvId == envId && x.Type == StoreItemType.Flag && x.Timestamp > timestamp)
                 .Select(x => x.JsonBytes)
                 .ToArray();
 
             return Task.FromResult<IEnumerable<byte[]>>(flags);
         }
+        finally
+        {
+            _storeLock.ExitReadLock();
+        }
     }
 
     public Task<IEnumerable<byte[]>> GetFlagsAsync(IEnumerable<string> ids)
     {
-        lock (_writeLock)
+        _storeLock.EnterReadLock();
+
+        try
         {
-            var flags = _items
+            var flags = _items.Values
                 .Where(x => ids.Contains(x.Id))
                 .Select(x => x.JsonBytes)
                 .ToArray();
 
             return Task.FromResult<IEnumerable<byte[]>>(flags);
         }
+        finally
+        {
+            _storeLock.ExitReadLock();
+        }
     }
 
     public Task<byte[]> GetSegmentAsync(string id)
     {
-        lock (_writeLock)
+        _storeLock.EnterReadLock();
+
+        try
         {
             // shared segments can cross multiple envs and we return the latest one
-            var segment = _items
+            var segment = _items.Values
                 .Where(x => x.Id == id)
                 .OrderByDescending(x => x.Timestamp)
                 .First();
 
             return Task.FromResult(segment.JsonBytes);
         }
+        finally
+        {
+            _storeLock.ExitReadLock();
+        }
     }
 
     public Task<IEnumerable<byte[]>> GetSegmentsAsync(Guid envId, long timestamp)
     {
-        lock (_writeLock)
+        _storeLock.EnterReadLock();
+
+        try
         {
-            var segments = _items
+            var segments = _items.Values
                 .Where(x => x.EnvId == envId && x.Type == StoreItemType.Segment && x.Timestamp > timestamp)
                 .Select(x => x.JsonBytes)
                 .ToArray();
 
             return Task.FromResult<IEnumerable<byte[]>>(segments);
         }
+        finally
+        {
+            _storeLock.ExitReadLock();
+        }
     }
 
     public Task<Secret?> GetSecretAsync(string secretString)
     {
-        lock (_writeLock)
+        _storeLock.EnterReadLock();
+
+        try
         {
             var secretWithValue = _secrets.FirstOrDefault(x => x.Value == secretString);
 
             var secret = secretWithValue?.AsSecret();
             return Task.FromResult(secret);
         }
+        finally
+        {
+            _storeLock.ExitReadLock();
+        }
     }
 
     public ValueTask<string[]> GetFlagReferencesAsync(Guid envId, string segmentId)
     {
-        lock (_writeLock)
+        _storeLock.EnterReadLock();
+
+        try
         {
-            var flagIds = _items
+            var flagIds = _items.Values
                 .Where(x => x.EnvId == envId && x.Type == StoreItemType.Flag)
                 .Where(x => x.HasSegmentReference(segmentId))
                 .Select(x => x.Id)
                 .ToArray();
 
             return ValueTask.FromResult(flagIds);
+        }
+        finally
+        {
+            _storeLock.ExitReadLock();
+        }
+    }
+
+    // Caller must hold _storeLock's write lock.
+    private void UpsertItem(StoreItem item)
+    {
+        System.Diagnostics.Debug.Assert(_storeLock.IsWriteLockHeld);
+
+        var key = new StoreItemKey(item.EnvId, item.Type, item.Key);
+        if (!_items.TryGetValue(key, out var existing) || existing.Timestamp <= item.Timestamp)
+        {
+            // Replace the entire record so ID-based lookups use the new database ID too.
+            _items[key] = item;
         }
     }
 }
