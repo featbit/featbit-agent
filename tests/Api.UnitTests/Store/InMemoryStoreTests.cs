@@ -100,15 +100,29 @@ public class InMemoryStoreTests
         Assert.Equal(original.JsonBytes, Assert.Single(result));
     }
 
-    [Theory]
-    [InlineData("flag")]
-    [InlineData("segment")]
-    public void StoreItem_UsesKeyOrFallsBackToId(string type)
+    [Fact]
+    public void StoreItem_ComputesIdentity()
     {
         var env = Guid.NewGuid();
-        Assert.Equal("explicit-key", Item("id", env, type, 10, "explicit-key").Key);
-        Assert.Equal("id", Item("id", env, type, 10).Key);
-        Assert.Equal("id", Item("id", env, type, 10, nullKey: true).Key);
+        Assert.Equal("explicit-key", Item("id", env, "flag", 10, "explicit-key").Identity);
+        Assert.Equal("shared_explicit-key", Item("id", env, "segment", 10, "explicit-key").Identity);
+        Assert.Equal("shared_id", Item("id", env, "segment", 10).Identity);
+        Assert.Equal("shared_id", Item("id", env, "segment", 10, nullKey: true).Identity);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SegmentTypes_WithSameKey_AreRetained(bool full)
+    {
+        var env = Guid.NewGuid();
+        var shared = Item("shared-id", env, "segment", 10, "same");
+        var local = Item("local-id", env, "segment", 20, "same", segmentType: "environment-specific");
+        var store = new InMemoryStore();
+        await Load(store, full, shared, local);
+        Assert.Equal(2, (await store.GetSegmentsAsync(env, 0)).Count());
+        Assert.Equal(shared.JsonBytes, await store.GetSegmentAsync("shared-id"));
+        Assert.Equal(local.JsonBytes, await store.GetSegmentAsync("local-id"));
     }
 
     private static async Task Load(InMemoryStore store, bool full, params StoreItem[] items)
@@ -136,7 +150,7 @@ public class InMemoryStoreTests
         type == "flag" ? store.GetFlagsAsync(env, 0) : store.GetSegmentsAsync(env, 0);
 
     private static StoreItem Item(string id, Guid env, string type, long timestamp,
-        string? key = null, bool archived = false, bool nullKey = false)
+        string? key = null, bool archived = false, bool nullKey = false, string segmentType = "shared")
     {
         var payload = new Dictionary<string, object?>
         {
@@ -144,6 +158,7 @@ public class InMemoryStoreTests
             ["updatedAt"] = DateTimeOffset.FromUnixTimeMilliseconds(timestamp),
             ["isArchived"] = archived
         };
+        if (type == "segment") payload["type"] = segmentType;
         if (key != null || nullKey) payload["key"] = key;
         using var json = JsonDocument.Parse(JsonSerializer.Serialize(payload));
         return StoreItem.Of(json.RootElement, type);

@@ -327,7 +327,7 @@ internal sealed class InMemoryStore : IAgentStore, IStore
     {
         System.Diagnostics.Debug.Assert(_storeLock.IsWriteLockHeld);
 
-        var key = new StoreItemKey(item.EnvId, item.Type, item.Key);
+        var key = new StoreItemKey(item.EnvId, item.Type, item.Identity);
         if (!_items.TryGetValue(key, out var existing) || existing.Timestamp <= item.Timestamp)
         {
             // Replace the entire record so ID-based lookups use the new database ID too.
